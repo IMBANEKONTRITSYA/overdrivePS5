@@ -26,6 +26,7 @@ Homebrew-магазин игр для PS5 на фреймворке [ps5-react](
 Только Linux (Ubuntu 24.04), как в CI. Нативный превью ps5-react работает только на macOS (Apple Silicon), так что на Linux проверить результат можно только на консоли.
 
 ```bash
+bash packaging/fetch-deps.sh   # platform и ps5-opengl SDK с зеркал: апстрим-репозитории удалены с GitHub
 cd ps5-react
 python3 tools/build_ps5.py --app-dir ../app --llvm /usr/bin
 cd ..

@@ -51,6 +51,12 @@ jobs:
           path: ps5-react/.deps
           key: deps-${{ hashFiles('ps5-react/dependencies.lock.json') }}
 
+      - name: Fetch the dependencies whose upstream is gone
+        # blackbearreloaded/ps5-homebrew-ui and the ps5-opengl SDK release no longer exist on GitHub.
+        # The build still verifies the pinned revision and sha256, so a mirror can only supply the
+        # exact bytes the lock file names.
+        run: bash packaging/fetch-deps.sh
+
       - name: Build
         working-directory: ps5-react
         run: python3 tools/build_ps5.py --app-dir "$GITHUB_WORKSPACE/app" --llvm /usr/bin

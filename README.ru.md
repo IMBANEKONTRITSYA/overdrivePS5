@@ -241,13 +241,17 @@ workflow; тег `v*` дополнительно публикует релиз �
 `pkg-config`, `unzip`, `curl`, `exfatprogs`, а также Pillow из `ps5-react/requirements.txt`):
 
 ```sh
+bash packaging/fetch-deps.sh
 cd ps5-react
 python3 tools/build_ps5.py --app-dir ../app --llvm /usr/bin
 sudo ../packaging/make-exfat.sh dist/PPSA99058 ../Overdrive.exfat
 ```
 
 При сборке закреплённые зависимости скачиваются в `ps5-react/.deps`, а папка приложения, `.zip` и
-`.receipt.json` записываются в `ps5-react/dist`. Результат проверяется автоматически
+`.receipt.json` записываются в `ps5-react/dist`. Две зависимости исчезли с GitHub
+(`blackbearreloaded/ps5-homebrew-ui` и релиз SDK `ps5-opengl`), поэтому сначала
+`packaging/fetch-deps.sh` берёт их с публичных зеркал; сборка по-прежнему сверяет закреплённую
+ревизию и sha256, так что зеркало может дать только те самые байты, что названы в lock-файле. Результат проверяется автоматически
 (`tools/verify.py`), поэтому успешная сборка означает, что структура payload и подписи в порядке.
 `--llvm /usr/bin` указывает на системный clang; по умолчанию в апстриме используется путь к LLVM
 из Homebrew, поскольку поддерживаемая среда разработки — macOS.

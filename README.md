@@ -238,13 +238,17 @@ The same build locally, on any Linux with the packages the workflow installs (`c
 `pkg-config`, `unzip`, `curl`, `exfatprogs`, and Pillow from `ps5-react/requirements.txt`):
 
 ```sh
+bash packaging/fetch-deps.sh
 cd ps5-react
 python3 tools/build_ps5.py --app-dir ../app --llvm /usr/bin
 sudo ../packaging/make-exfat.sh dist/PPSA99058 ../Overdrive.exfat
 ```
 
 The build downloads its pinned dependencies into `ps5-react/.deps` and writes the app folder, a
-`.zip` and a `.receipt.json` into `ps5-react/dist`. It verifies the result itself
+`.zip` and a `.receipt.json` into `ps5-react/dist`. Two of those dependencies have vanished from
+GitHub (`blackbearreloaded/ps5-homebrew-ui` and the `ps5-opengl` SDK release), so
+`packaging/fetch-deps.sh` seeds them from public mirrors first; the build still checks the pinned
+revision and sha256, so a mirror can only supply the exact bytes the lock file names. It verifies the result itself
 (`tools/verify.py`), so a green build means the payload structure and signatures check out.
 `--llvm /usr/bin` points it at the system clang; upstream defaults to the Homebrew LLVM path
 because macOS is its supported development environment.
