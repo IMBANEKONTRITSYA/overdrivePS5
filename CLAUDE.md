@@ -61,7 +61,7 @@ CI запускается только вручную (Run workflow): кладё
 
 ## Локализация
 
-- 14 языков: en, de, es, fr, it, pt-BR, ru, id, ja, zh-Hans, ar, ur, hi, bn. Исходный — `en` (README пока пишет «13 languages», итальянский добавлен позже).
+- 14 языков: en, de, es, fr, it, pt-BR, ru, id, ja, zh-Hans, ar, ur, hi, bn. Исходный — `en`.
 - Ключи плоские: `"area.name": "..."`, параметры `{count}`, множественное число — ICU: `{count, plural, one {# game} other {# games}}`.
 - Новый ключ → добавить во **все** `app/i18n/locales/*.json`. Во всех 14 файлах одинаковый набор ключей (421); проверка — скрипт в скилле `add-i18n-string`.
 - Ар/урду — RTL: учитывай `rtl` из `useLocale()` в отступах.
@@ -70,7 +70,7 @@ CI запускается только вручную (Run workflow): кладё
 ## Обновления
 
 Апдейтер уже есть: `app/state/update.js` (лента), `app/state/updater.js`, `app/ui/UpdateDialog.jsx`.
-Лента `FEED` смотрит на `MyLuxy/overdrive/releases/latest` — релизы этого репозитория до установленных копий не дойдут, пока FEED не поменять.
+Лента `FEED` смотрит на `IMBANEKONTRITSYA/overdrivePS5/releases/latest` — туда же CI кладёт сборки, так что опубликованный релиз доходит до установленных копий. Копии, собранные из апстрима (MyLuxy/overdrive), эту ленту не видят. Переопределение для тестов — файл `update-feed` (см. `FEED_OVERRIDES` в `app/state/update.js`).
 
 ## Git
 
