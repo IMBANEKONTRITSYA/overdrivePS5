@@ -2,6 +2,9 @@
 // reconstructed from the esbuild bundle in eboot.bin
 // MODIFIED: an Archive.org refusal fails over or fails as a dead link instead of asking for the browser.
 // MODIFIED: an archive the catalog's password doesn't open is tried with the known release passwords.
+// MODIFIED: restart discards a completed archive the job downloaded itself after extraction failed, instead of refusing it as a final file.
+// MODIFIED: a folder publication records its destination before the rename, so a crash in between recovers.
+// MODIFIED: cancelling an install retry no longer leaves the job flagged as cancelling.
 
 import { INCOMPLETE_PART, STALE_PARTIAL, cause } from '../downloads/errors.js';
 import { t } from '../i18n/core.js';
@@ -557,10 +560,16 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
         } else if (folder) {
           const destination = `${job2.root}/homebrew/${job2.release.filename.replace(/[^a-z0-9_.-]/gi, "_")}-app`;
           fs.mkdir(`${job2.root}/homebrew`, { recursive: true });
-          if (fs.exists(destination)) throw new Error("Extracted destination already exists; preserve it and inspect before retrying.");
-          storageIdentity(job2);
-          fs.rename(folder, destination);
-          if (folder !== job2.output) await fs.removeAsync(job2.output);
+          // The destination is recorded before the rename, so a crash in between leaves a job that knows
+          // the folder is its own: extracting again lands in it instead of refusing it as a stranger's.
+          if (folder !== destination) {
+            if (fs.exists(destination)) throw new Error("Extracted destination already exists; preserve it and inspect before retrying.");
+            storageIdentity(job2);
+            job2.publishTo = destination;
+            change();
+            fs.rename(folder, destination);
+            if (folder !== job2.output) await fs.removeAsync(job2.output);
+          }
           job2.output = destination;
           job2.publishTo = destination;
           job2.artifact.nextAction = "shadowmount";
@@ -761,6 +770,17 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
         if (info && !info.isFile) throw new Error(`Cannot discard a non-file: ${path}`);
       }
       return paths;
+    }
+    // The final file of a single-file job that downloaded it itself (so not adopted, and on its original
+    // drive), with its sidecars and a half-extracted output of its own: what an explicit restart discards.
+    // An unrelated final file is never the job's: enqueue and failOver refuse a destination that exists.
+    function completedFiles(job2) {
+      storageIdentity(job2);
+      const destination = job2.downloadDestination || job2.artifact.destination;
+      const info = fs.stat(destination);
+      if (info && !info.isFile) throw new Error(`Cannot discard a non-file: ${destination}`);
+      const extracted = job2.output?.startsWith(`${job2.root}/downloads/extracted/`) && !job2.publishTo && !jobs.some((other) => other !== job2 && [other.output, other.publishTo, other.artifact.destination, other.downloadDestination].some((owned2) => owned2 && (owned2 === job2.output || owned2.startsWith(`${job2.output}/`)))) ? [job2.output] : [];
+      return [destination, ...[".complete", ".complete.tmp", ".part", ".resume", ".resume.tmp"].map((suffix) => destination + suffix), ...extracted];
     }
     function setFiles(job2) {
       storageIdentity(job2);
@@ -1158,9 +1178,14 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
         const job2 = find(id);
         if (!["paused", "failed", "awaiting-browser"].includes(job2.state) || active2?.job === job2) return;
         if (job2.adopted) throw new Error(ADOPTED);
-        const paths = !job2.parts?.[job2.partIndex]?.completed && (job2.options || job2.rootIdentity || job2.written || fs.exists(job2.artifact.destination + ".part") || fs.exists(job2.artifact.destination + ".resume")) ? partialFiles(job2) : [];
+        const completed = !job2.parts && job2.rootIdentity && job2.written > 0 && fs.exists(job2.downloadDestination || job2.artifact.destination);
+        const paths = completed ? completedFiles(job2) : !job2.parts?.[job2.partIndex]?.completed && (job2.options || job2.rootIdentity || job2.written || fs.exists(job2.artifact.destination + ".part") || fs.exists(job2.artifact.destination + ".resume")) ? partialFiles(job2) : [];
         stopCapture(job2);
         if (paths.length) await removing(job2, () => removeAll(paths));
+        if (completed) {
+          if (!job2.publishTo) delete job2.output;
+          delete job2.packages;
+        }
         delete job2.directURL;
         delete job2.reresolved;
         if (job2.parts?.[job2.partIndex] && !job2.parts[job2.partIndex].completed) {
@@ -1256,7 +1281,9 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
         const job2 = find(id);
         if (COMPLETE.includes(job2.state) || job2.state === "removing") return;
         if (active2?.job === job2) {
-          job2.cancelling = true;
+          // An install retry owns no partial file: cancelling it only asks the console to stop, and the
+          // package stays, since the console may finish anyway. Nothing is forgotten.
+          if (!job2.install) job2.cancelling = true;
           this.pause(id);
           return;
         }
