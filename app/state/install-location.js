@@ -1,5 +1,6 @@
 // ../pub-game-store/native/state/install-location.js
 // reconstructed from the esbuild bundle in eboot.bin
+// MODIFIED: the fallback image search recognizes the distributed name Overdrive.exfat, not only Overdrive-PPSA99058*.exfat.
 
 
   var SHADOWMOUNT = "http://127.0.0.1:10101/api/v1/games/info";
@@ -33,7 +34,9 @@
     if (type === "image" && path.endsWith(".exfat")) return { image: path };
     throw new Error(`ShadowMount runs Overdrive from ${path}, an install of type ${type}`);
   }
-  var imagesIn = ({ fs, dir: dir2, title }) => fs.exists(dir2) ? fs.readDir(dir2).filter((entry2) => !entry2.isDirectory && new RegExp(`^Overdrive-${title}.*\\.exfat$`, "i").test(entry2.name)).map((entry2) => ({ image: `${dir2}/${entry2.name}` })) : [];
+  // The distributed image is Overdrive.exfat; a name carrying the title id is accepted too. Anything looser
+  // (Overdrive-old.exfat) is left alone: more than one match already reads as installed twice.
+  var imagesIn = ({ fs, dir: dir2, title }) => fs.exists(dir2) ? fs.readDir(dir2).filter((entry2) => !entry2.isDirectory && new RegExp(`^Overdrive(?:-${title}.*)?\\.exfat$`, "i").test(entry2.name)).map((entry2) => ({ image: `${dir2}/${entry2.name}` })) : [];
   function inHomebrew({ fs, roots, title }) {
     const found = roots().flatMap((root2) => [
       ...fs.exists(`${root2}/homebrew/${title}/eboot.bin`) ? [{ installDir: `${root2}/homebrew/${title}` }] : [],

@@ -16,8 +16,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/MyLuxy/overdrive/releases/latest"><img src="https://img.shields.io/github/v/release/MyLuxy/overdrive?style=for-the-badge&label=release&labelColor=0b0b0d&color=2a2a2f" alt="Последний релиз" width="197"></a>
-  <a href="https://github.com/MyLuxy/overdrive/releases"><img src="https://img.shields.io/github/downloads/MyLuxy/overdrive/total?style=for-the-badge&label=downloads&labelColor=0b0b0d&color=2a2a2f" alt="Скачивания" width="183"></a>
+  <a href="https://github.com/IMBANEKONTRITSYA/overdrivePS5/releases/latest"><img src="https://img.shields.io/github/v/release/IMBANEKONTRITSYA/overdrivePS5?style=for-the-badge&label=release&labelColor=0b0b0d&color=2a2a2f" alt="Последний релиз" width="197"></a>
+  <a href="https://github.com/IMBANEKONTRITSYA/overdrivePS5/releases"><img src="https://img.shields.io/github/downloads/IMBANEKONTRITSYA/overdrivePS5/total?style=for-the-badge&label=downloads&labelColor=0b0b0d&color=2a2a2f" alt="Скачивания" width="183"></a>
   <a href="https://github.com/sponsors/MyLuxy"><img src="https://img.shields.io/badge/sponsor-%E2%9D%A4-db61a2?style=for-the-badge&logo=githubsponsors&logoColor=white&labelColor=0b0b0d" alt="Поддержать MyLuxy на GitHub" width="180"></a>
 </p>
 
@@ -47,7 +47,7 @@
 - **Просмотр всей библиотеки** с фильтрами, сортировкой, оценками и размерами загрузок — всё видно сразу
 - **Загрузка прямо на консоль** — во внутренний накопитель или на любой USB-накопитель, со скоростью и занятым местом в реальном времени
 - **Избранное**, **поиск** с экранной клавиатурой и страница **«Файлы»**, где видно, что лежит на накопителях, и можно это почистить
-- **13 языков**: английский, немецкий, испанский, французский, португальский (Бразилия), русский, индонезийский, японский, китайский (упрощённый), арабский, урду, хинди, бенгальский
+- **14 языков**: английский, немецкий, испанский, французский, итальянский, португальский (Бразилия), русский, индонезийский, японский, китайский (упрощённый), арабский, урду, хинди, бенгальский
 - **Обновляется сам**: новая версия устанавливается прямо с консоли, без компьютера
 - Сделано под геймпад: <kbd>L1</kbd> <kbd>R1</kbd> — переключение разделов, <kbd>✕</kbd> — выбрать, <kbd>○</kbd> — назад
 
@@ -64,7 +64,7 @@
 показывает уведомление, значит всё готово. Также понадобятся **USB-накопитель** и **компьютер**.
 
 <p align="center">
-  <a href="https://github.com/MyLuxy/overdrive/releases/latest/download/Overdrive.exfat"><img src="https://img.shields.io/badge/Download-Overdrive.exfat-f2f2f3?style=for-the-badge&labelColor=0b0b0d" alt="Скачать Overdrive.exfat" width="347"></a>
+  <a href="https://github.com/IMBANEKONTRITSYA/overdrivePS5/releases/latest/download/Overdrive.exfat"><img src="https://img.shields.io/badge/Download-Overdrive.exfat-f2f2f3?style=for-the-badge&labelColor=0b0b0d" alt="Скачать Overdrive.exfat" width="347"></a>
 </p>
 
 <table>
@@ -73,7 +73,7 @@
 <td>
 
 **Скачайте `Overdrive.exfat`** по кнопке выше или из
-[последнего релиза](https://github.com/MyLuxy/overdrive/releases/latest). Это единственный нужный
+[последнего релиза](https://github.com/IMBANEKONTRITSYA/overdrivePS5/releases/latest). Это единственный нужный
 файл. Оставьте его как есть: не распаковывайте и не меняйте `.exfat` в конце имени.
 
 </td>
@@ -183,7 +183,7 @@ Overdrive бесплатный и с открытым исходным кодо�
 <br>
 
 Установите вручную: скачайте `Overdrive.exfat` из
-[последнего релиза](https://github.com/MyLuxy/overdrive/releases/latest), закройте Overdrive и
+[последнего релиза](https://github.com/IMBANEKONTRITSYA/overdrivePS5/releases/latest), закройте Overdrive и
 скопируйте новый файл поверх старого в папку `homebrew`.
 
 </details>
