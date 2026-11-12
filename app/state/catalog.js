@@ -1,5 +1,6 @@
 // ../pub-game-store/native/state/catalog.js
 // reconstructed from the esbuild bundle in eboot.bin
+// MODIFIED: `downloadable` tells entries with a source apart from browse-only ones; showcases skip the latter and a filter can hide them.
 
 import { features, games, twins } from '../data/catalog.js';
 import { formatDate2, formatNumber2, t } from '../i18n/core.js';
@@ -85,9 +86,13 @@ import { FileSystem, Image } from '@ps5-react/core';
   var sortLabel = (id) => t(`sort.${id}`);
   var sortGames = (list, id) => [...list].sort(SORTS.find((sort) => sort.id === id).compare);
   var fromArchive = (game) => Boolean(game.providers?.includes("archive.org"));
+  // An entry with a source the app can offer. The catalog lists providers only for releases that are
+  // not marked unavailable, so an empty list means every one of its sources is known to refuse.
+  var downloadable = (game) => Boolean(game.providers?.length);
   function showcase(list, count) {
-    const first = list.filter(fromArchive);
-    return first.length >= count ? first.slice(0, count) : [...first, ...list.filter((game) => !fromArchive(game))].slice(0, count);
+    const offered = list.filter(downloadable);
+    const first = offered.filter(fromArchive);
+    return first.length >= count ? first.slice(0, count) : [...first, ...offered.filter((game) => !fromArchive(game))].slice(0, count);
   }
   var HOST_NAMES = {
     "overdrive cdn": "Overdrive CDN",
@@ -141,7 +146,7 @@ import { FileSystem, Image } from '@ps5-react/core';
       has: (game, value) => game.platform === value
     },
     // A source the app downloads by itself, with no CAPTCHA page to pass in a browser.
-    { key: "access", options: [{ value: "direct", label: "filters.access.direct" }], has: (game) => Boolean(game.direct) },
+    { key: "access", options: [{ value: "direct", label: "filters.access.direct" }, { value: "available", label: "filters.access.available" }], has: (game, value) => value === "available" ? downloadable(game) : Boolean(game.direct) },
     {
       key: "genre",
       options: named(byGames(genres, (game, genre) => game.genres.includes(genre)), "genre"),
@@ -200,4 +205,4 @@ import { FileSystem, Image } from '@ps5-react/core';
     return formatNumber2(n);
   }
 
-export { CDN_HOST, FACETS, NO_FILTERS, SORTS, activeCount, editionsOf, facetCounts, facetLabel, facetTitle, featureLabel, filterGames, formatCount, formatDate3, fromArchive, genreLabel, genres, getGame, listedId, onCdn, optionLabel, relatedGames, showcase, sortGames, sortLabel, summaryOf, toggleValue, warmCovers };
+export { CDN_HOST, FACETS, NO_FILTERS, SORTS, activeCount, downloadable, editionsOf, facetCounts, facetLabel, facetTitle, featureLabel, filterGames, formatCount, formatDate3, fromArchive, genreLabel, genres, getGame, listedId, onCdn, optionLabel, relatedGames, showcase, sortGames, sortLabel, summaryOf, toggleValue, warmCovers };

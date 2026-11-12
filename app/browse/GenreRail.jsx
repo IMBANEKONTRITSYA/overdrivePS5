@@ -1,19 +1,21 @@
 // ../pub-game-store/native/browse/GenreRail.jsx
 // reconstructed from the esbuild bundle in eboot.bin
+// MODIFIED: genre covers come from games with a source.
 
 import { jsx, jsxs } from 'react/jsx-runtime';
 import { useState } from 'react';
 import { GenreCard } from './GenreCard.jsx';
 import { games } from '../data/catalog.js';
 import { useT } from '../i18n/index.js';
-import { genres } from '../state/catalog.js';
+import { downloadable, genres } from '../state/catalog.js';
 import { useStoreActions, useStoreState } from '../state/store.jsx';
 import { SectionHeader } from '../ui/SectionHeader.jsx';
 import { ScrollView, View } from '@ps5-react/core';
 
   var used = /* @__PURE__ */ new Set();
   var RAIL = genres.map((genre) => ({ genre, matches: games.filter((game) => game.genres.includes(genre)).sort((a, b) => b.recommendations - a.recommendations) })).filter(({ matches }) => matches.length >= 3).sort((a, b) => b.matches.length - a.matches.length).map(({ genre, matches }) => {
-    const covers = [...matches.filter((game) => !used.has(game.id)), ...matches.filter((game) => used.has(game.id))].slice(0, 3);
+    const offered = matches.filter(downloadable);
+    const covers = [...offered.filter((game) => !used.has(game.id)), ...offered.filter((game) => used.has(game.id))].slice(0, 3);
     covers.forEach((game) => used.add(game.id));
     return { genre, count: matches.length, covers };
   });
