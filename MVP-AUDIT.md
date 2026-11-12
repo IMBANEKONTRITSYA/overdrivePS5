@@ -148,7 +148,7 @@ The claim that automatic browser capture cannot match `vik1ngfile.site` because 
 - **A9 — implemented.** Cancelling an install retry only cancels the console's task; the job is not flagged `cancelling` and the package stays.
 - **A10 — implemented.** The Downloads panel re-reads drive usage every 5 s while shown.
 - **A11 — implemented.** The folder-install notice says updates are not offered, not "soon".
-- **A6 — open.** Not addressed in this pass.
+- **A6 — partial presentation fix; remains open.** Sources carrying `unavailableReason` no longer append provider speed/"fastest" claims in `describeSource`; the existing unavailable group and reason remain visible. No provider requests or access-control workarounds were added. Browse promotion and the direct-access filter still trust catalog summaries: the catalog has no availability summary, and synchronously opening every release file at startup is not an acceptable fix. Completing browse-level availability needs a generated, backward-compatible availability summary (including multipart validation) and UI review; metadata must remain browseable. This remote-only follow-up was statically reviewed, not bundled, built or tested on a console.
 
 ## Resume guidance
 
