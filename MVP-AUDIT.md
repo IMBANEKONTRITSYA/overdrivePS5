@@ -135,6 +135,21 @@ The claim that automatic browser capture cannot match `vik1ngfile.site` because 
 5. A4/A5 update discovery and distribution decision. Exercise normal image API discovery, API-unavailable fallback, duplicate installs, digest failure, interrupted replacement and manual legacy-folder migration.
 6. A6 availability presentation, A7 translations, then A9/A10 and controller/RTL polish.
 
+## Implementation record
+
+2026-11-12, branch `claude/compassionate-sagan-0kznhd`. Verification so far: every locale parses with the same 421 keys, and the app bundles with the framework's own esbuild step (`tools/common.py: bundle`) without errors. No Linux package build, exFAT packaging or console run was performed here; each item below stays **open for console verification** until that happens.
+
+- **A1/A2 — implemented.** `app/files/useFiles.js` refuses, before and again after the asynchronous mount check, any deletion whose targets overlap (by path segment) a job that is queued, running or deleting itself, a package the Files screen is installing (held in a module-level set, so leaving the screen does not drop the lock), or Overdrive's own install: the `PPSA99058` folder, an `Overdrive.exfat` / `Overdrive-PPSA99058*.exfat` image, or whatever path ShadowMount's `games/info` reports for the title. A refusal removes nothing and `FilesScreen.jsx` shows its reason (`files.kept*`). Installing a file that is being deleted is refused too.
+- **A3 — implemented.** `restart` of a single-file job that downloaded its final file itself (storage identity known, not adopted, bytes written) discards that file, its sidecars and an unpublished `downloads/extracted` output of its own, then starts fresh. Set jobs, adopted files and published output are untouched.
+- **A4 — implemented.** `install-location.js` accepts `Overdrive.exfat` as well as `Overdrive-PPSA99058*.exfat`; two matches still read as installed twice.
+- **A5 — decided and implemented.** The feed is this repository's `releases/latest`; the in-app migration link, `update.replaceByHand`, both READMEs and the issue templates point here. Copies built from upstream keep upstream's feed.
+- **A7 — implemented.** All fourteen dictionaries carry the same keys.
+- **A8 — implemented.** The folder publication records `publishTo` and saves before the rename into `homebrew`, and tolerates meeting its own folder on retry.
+- **A9 — implemented.** Cancelling an install retry only cancels the console's task; the job is not flagged `cancelling` and the package stays.
+- **A10 — implemented.** The Downloads panel re-reads drive usage every 5 s while shown.
+- **A11 — implemented.** The folder-install notice says updates are not offered, not "soon".
+- **A6 — open.** Not addressed in this pass.
+
 ## Resume guidance
 
 Do not repeat the entire audit before implementation. Read the relevant finding and its files, confirm that the baseline code still matches, then implement a narrow change with targeted tests. All findings remain **open** until a fix and its actual verification are recorded. Static checks do not replace a Linux build or console run. No issue numbers, PRs, successful builds, or implemented fixes are implied by this document.

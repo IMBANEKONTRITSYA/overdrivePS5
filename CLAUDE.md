@@ -63,7 +63,7 @@ CI запускается только вручную (Run workflow): кладё
 
 - 14 языков: en, de, es, fr, it, pt-BR, ru, id, ja, zh-Hans, ar, ur, hi, bn. Исходный — `en` (README пока пишет «13 languages», итальянский добавлен позже).
 - Ключи плоские: `"area.name": "..."`, параметры `{count}`, множественное число — ICU: `{count, plural, one {# game} other {# games}}`.
-- Новый ключ → добавить во **все** `app/i18n/locales/*.json`. Сейчас в `en`/`it` 418 ключей, в остальных меньше (нет `update.*`, `capture.*`, `downloads.notice.captured`).
+- Новый ключ → добавить во **все** `app/i18n/locales/*.json`. Во всех 14 файлах одинаковый набор ключей (421); проверка — скрипт в скилле `add-i18n-string`.
 - Ар/урду — RTL: учитывай `rtl` из `useLocale()` в отступах.
 - Шрифты запекаются только для европейских глифов (`assets.config.js`); CJK/индийские/арабские — через `textFonts` в `app.json`.
 
