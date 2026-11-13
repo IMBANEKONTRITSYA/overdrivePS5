@@ -1,5 +1,6 @@
 // ../pub-game-store/native/state/update.js
 // reconstructed from the esbuild bundle in eboot.bin
+// MODIFIED: the update feed is this repository's releases, where CI publishes, instead of upstream's.
 
 import { useEffect, useState } from 'react';
 import { downloadQueue, storageRoots } from './downloads.js';
@@ -9,7 +10,7 @@ import { VERSION } from '../version.js';
 import { Archives, Downloads, FileSystem, Http, Platform } from '@ps5-react/core';
 
   var TITLE = "PPSA99058";
-  var FEED = "https://api.github.com/repos/MyLuxy/overdrive/releases/latest";
+  var FEED = "https://api.github.com/repos/IMBANEKONTRITSYA/overdrivePS5/releases/latest";
   var FEED_OVERRIDES = [`${FileSystem.dataDir}/overdrive/update-feed`, `/data/ps5-react/${TITLE}/overdrive/update-feed`];
   function location() {
     if (Platform.OS !== "ps5") return { installDir: `${FileSystem.dataDir}/homebrew/${TITLE}`, workDir: `${FileSystem.dataDir}/overdrive-update` };

@@ -1,12 +1,13 @@
 // ../pub-game-store/native/ui/GameCard.jsx
 // reconstructed from the esbuild bundle in eboot.bin
+// MODIFIED: detailed cards mark entries that have no source.
 
 import '../assets/Inter-Regular.ttf';
 import { Fragment, jsx, jsxs } from 'react/jsx-runtime';
 import { useEffect, useRef, useState } from 'react';
 import { prefetchWhenSettled } from '../game/art.js';
-import { focusEnd, latin, useLocale } from '../i18n/index.js';
-import { genreLabel, onCdn } from '../state/catalog.js';
+import { focusEnd, latin, useLocale, useT } from '../i18n/index.js';
+import { downloadable, genreLabel, onCdn } from '../state/catalog.js';
 import { formatSize } from '../state/size.js';
 import { useStoreActions, useWishlist } from '../state/store.jsx';
 import { CardFocus } from './CardFocus.jsx';
@@ -70,12 +71,14 @@ import { Text, View, motion, transitions, useIsFocused } from '@ps5-react/core';
   }
   function Details({ game, focused, box }) {
     const { rtl } = useLocale();
+    const t2 = useT();
     return /* @__PURE__ */ (0, jsxs)(View, { style: [{ height: 144, paddingTop: 15 }, box.text], children: [
       /* @__PURE__ */ (0, jsx)(Text, { style: { fontFamily: "Inter-Regular", fontSize: 20, color: "#8a8a94", numberOfLines: 1, ellipsizeMode: "tail", lineHeight: 24 }, children: game.genres[0] ? genreLabel(game.genres[0]) : game.platform.toUpperCase() }),
       /* @__PURE__ */ (0, jsx)(Text, { focused, style: [{ marginTop: 6, height: 60, paddingRight: 6, fontFamily: "Inter-Regular", fontSize: 23, fontWeight: 600, color: "#f2f2f3e6", numberOfLines: 2, ellipsizeMode: "tail", lineHeight: 30 }, focused ? { color: "#f2f2f3" } : null], children: latin(rtl, game.title) }),
       /* @__PURE__ */ (0, jsxs)(View, { style: { marginTop: 9, height: 30, flexDirection: "row", alignItems: "center", gap: 12 }, children: [
         game.metacritic != null && /* @__PURE__ */ (0, jsx)(View, { style: { borderRadius: 3, backgroundColor: "#f2f2f3", paddingHorizontal: 9 }, children: /* @__PURE__ */ (0, jsx)(Text, { style: { fontFamily: "Inter-Regular", fontSize: 20, fontWeight: 700, color: "#000000", lineHeight: 24 }, children: String(game.metacritic) }) }),
-        game.sizeGb != null && /* @__PURE__ */ (0, jsx)(Text, { style: { fontFamily: "Inter-Regular", fontSize: 20, color: "#a3a3ab" }, children: formatSize(game.sizeGb) })
+        game.sizeGb != null && /* @__PURE__ */ (0, jsx)(Text, { style: { fontFamily: "Inter-Regular", fontSize: 20, color: "#a3a3ab" }, children: formatSize(game.sizeGb) }),
+        downloadable(game) ? null : /* @__PURE__ */ (0, jsx)(Text, { style: { fontFamily: "Inter-Regular", fontSize: 20, color: "#8a8a94", numberOfLines: 1, ellipsizeMode: "tail" }, children: t2("catalog.noSource") })
       ] })
     ] });
   }

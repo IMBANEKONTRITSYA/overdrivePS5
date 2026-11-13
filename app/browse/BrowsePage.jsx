@@ -1,5 +1,6 @@
 // ../pub-game-store/native/browse/BrowsePage.jsx
 // reconstructed from the esbuild bundle in eboot.bin
+// MODIFIED: the migration guide points at this repository.
 
 import '../assets/Inter-Regular.ttf';
 import '../assets/JetBrainsMono-Regular.ttf';
@@ -31,7 +32,7 @@ import { FocusScope, ScrollView, Text, View } from '@ps5-react/core';
       /* @__PURE__ */ (0, jsx)(Text, { style: { fontFamily: "Inter-Regular", fontSize: 21, color: "#8a8a94", lineHeight: 30 }, children: t2("browse.footer") })
     ] });
   }
-  var MIGRATE_GUIDE = "github.com/MyLuxy/overdrive";
+  var MIGRATE_GUIDE = "github.com/IMBANEKONTRITSYA/overdrivePS5";
   function FolderInstallNotice() {
     const t2 = useT();
     if (!useFolderInstall()) return null;

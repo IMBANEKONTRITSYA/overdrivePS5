@@ -1,5 +1,6 @@
 // ../pub-game-store/native/game/sources.js
 // reconstructed from the esbuild bundle in eboot.bin
+// MODIFIED: Do not advertise download speed for explicitly unavailable sources.
 
 import { t } from '../i18n/core.js';
 import { sourceKind } from '../state/download-sources.js';
@@ -44,7 +45,7 @@ import { formatBytes } from '../state/size.js';
       parts ? t("sources.parts", { count: parts }) : null
     ].filter(Boolean).join(" \xB7 ");
     const reach = access(release);
-    const speed = SPEED[release.provider.toLowerCase()];
+    const speed = release.unavailableReason ? null : SPEED[release.provider.toLowerCase()];
     return {
       name: release.provider.replace(/^www\./, ""),
       detail: speed ? [detail2, t(speed)].filter(Boolean).join(" \xB7 ") : detail2,

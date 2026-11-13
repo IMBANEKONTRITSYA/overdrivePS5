@@ -1,8 +1,10 @@
 // ../pub-game-store/native/downloads/SummaryPanel.jsx
 // reconstructed from the esbuild bundle in eboot.bin
+// MODIFIED: drive usage re-reads itself every few seconds, since the panel re-renders only when a job's shape changes.
 
 import '../assets/Inter-Regular.ttf';
 import { jsx, jsxs } from 'react/jsx-runtime';
+import { useEffect, useState } from 'react';
 import { formatDuration, formatSpeed } from './format.js';
 import { useActivity } from './useQueue.js';
 import { formatNumber2 } from '../i18n/core.js';
@@ -16,6 +18,29 @@ import { FileSystem, ScrollView, Text, View } from '@ps5-react/core';
   var INSET = 8;
   var INNER = { width: WIDTH5 - 2 * INSET };
   var PANEL_KEY = "downloads:panel";
+  var USAGE_MS = 5e3;
+  // Free space, read on mount and every few seconds while shown. The parent re-renders only when a
+  // job's shape changes, so during a steady transfer the figure would otherwise sit still.
+  function useDiskUsage(root2) {
+    const read = () => {
+      try {
+        return FileSystem.diskUsage(root2);
+      } catch {
+        return null;
+      }
+    };
+    const [usage, setUsage] = (0, useState)(read);
+    (0, useEffect)(() => {
+      const refresh = () => setUsage((previous) => {
+        const next = read();
+        return previous && next && previous.free === next.free && previous.total === next.total ? previous : next;
+      });
+      refresh();
+      const timer = setInterval(refresh, USAGE_MS);
+      return () => clearInterval(timer);
+    }, [root2]);
+    return usage;
+  }
   function awake() {
     try {
       return downloadQueue().awake;
@@ -59,11 +84,7 @@ import { FileSystem, ScrollView, Text, View } from '@ps5-react/core';
   }
   function Drive({ root: root2, focusKey, onFocus }) {
     const t2 = useT();
-    let usage = null;
-    try {
-      usage = FileSystem.diskUsage(root2);
-    } catch {
-    }
+    const usage = useDiskUsage(root2);
     return /* @__PURE__ */ (0, jsxs)(View, { focusable: true, focusKey, onFocus, style: (_state2) => [{ gap: 12, borderRadius: 12, padding: 12 }, _state2.focused ? { backgroundColor: "#212125" } : null], children: [
       /* @__PURE__ */ (0, jsxs)(View, { style: { flexDirection: "row", justifyContent: "space-between" }, children: [
         /* @__PURE__ */ (0, jsx)(Text, { style: { fontFamily: "Inter-Regular", fontSize: 21, color: "#f2f2f3", lineHeight: 30 }, children: driveName(root2) }),
