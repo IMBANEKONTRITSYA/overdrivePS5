@@ -207,6 +207,7 @@ Overdrive бесплатный и с открытым исходным кодо�
 | --- | --- |
 | `app/` | Само приложение: исходники на JSX, состояние, ресурсы, данные каталога и `app.json` (title id `PPSA99058`, версия, возможности) |
 | `ps5-react/` | Фреймворк, на котором оно работает, взятый из [half144/ps5-react](https://github.com/half144/ps5-react) |
+| `tools/sync-pegasus.mjs` | Обновляет ссылки каталога с pegasus-dl.dev — агрегатора, из которого каталог и собран |
 | `packaging/make-exfat.sh` | Собирает образ exFAT, который устанавливает ShadowMount+ |
 | `.github/workflows/build.yml` | Процесс сборки |
 

@@ -19,6 +19,8 @@ Homebrew-магазин игр для PS5 на фреймворке [ps5-react](
 | `app/assets.config.js` | Какие глифы запекаются в шрифты |
 | `ps5-react/` | Vendored фреймворк — **не редактировать** |
 | `packaging/make-exfat.sh` | Сборка exFAT-образа для ShadowMount+ |
+| `packaging/fetch-deps.sh` | Зависимости сборки с зеркал (апстрим-репозитории удалены) |
+| `tools/sync-pegasus.mjs` | Обновление ссылок каталога с pegasus-dl.dev (агрегатор, из которого собран каталог) |
 | `.github/workflows/build.yml` | Сборка в CI |
 
 ## Сборка
@@ -59,6 +61,7 @@ CI запускается только вручную (Run workflow): кладё
 - `app/data/pages/<id>.json` — `{about, shots, summary}`.
 - Файлов ~2000 на каждый каталог; читаются с консоли через `FileSystem.readFile('/app0/data/...')` (см. `app/state/catalog.js`). Папки перечислены в `resources` в `app.json`.
 - Это сгенерированные данные: не правь их массово руками и не меняй формат без правки читающего кода в `app/state/`.
+- Обновление ссылок: `node tools/sync-pegasus.mjs` (с сети) или `--from <папка с catalogs.json и <slug>.json>`; `--dry-run` только считает. Записи `source: pegasus-*` заменяются свежими, записи других источников (`orbit`, `blackbox`, `archive-discovery`) и проверенные прямые ссылки сохраняются, id неизменившихся ссылок остаются прежними; у игр пересчитываются `providers`/`direct`, для новых Title ID создаются карточка и страница.
 
 ## Локализация
 

@@ -205,6 +205,7 @@ screen. In the other order ShadowMount+ finds the file again and puts the icon b
 | `app/` | The application: JSX sources, state, assets, catalog data, and `app.json` (title id `PPSA99058`, version, capabilities) |
 | `ps5-react/` | The framework it runs on, vendored from [half144/ps5-react](https://github.com/half144/ps5-react) |
 | `packaging/make-exfat.sh` | Builds the exFAT image ShadowMount+ installs |
+| `tools/sync-pegasus.mjs` | Refreshes the catalog's download links from pegasus-dl.dev, the aggregator it was built from |
 | `.github/workflows/build.yml` | The build |
 
 </details>
