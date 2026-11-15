@@ -5,6 +5,7 @@
 // MODIFIED: restart discards a completed archive the job downloaded itself after extraction failed, instead of refusing it as a final file.
 // MODIFIED: a folder publication records its destination before the rename, so a crash in between recovers.
 // MODIFIED: cancelling an install retry no longer leaves the job flagged as cancelling.
+// MODIFIED: a transfer that gets no byte within 90 seconds is cancelled with a connection error and falls over to the next source.
 
 import { INCOMPLETE_PART, STALE_PARTIAL, cause } from '../downloads/errors.js';
 import { t } from '../i18n/core.js';
@@ -231,6 +232,24 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
       change();
     }
     const canInstall = () => Boolean(packages) && platform === "ps5";
+    // A host that never answers (blocked on this network, or down) keeps the engine retrying its
+    // connections for many minutes with nothing to show but "connecting". After this long without a
+    // byte the transfer is cancelled with a connection error, which fails over to the next source.
+    const CONNECT_LIMIT_MS = 90e3;
+    function stallGuard(job2, task, url) {
+      const timer = setTimeout(() => {
+        if (!["resolving", "connecting"].includes(job2.state) || job2.received > 0) return;
+        let host2 = "the host";
+        try {
+          host2 = webURL(url).host;
+        } catch {
+        }
+        job2.error = `Could not connect to ${host2} within ${CONNECT_LIMIT_MS / 1e3} seconds. Check the connection or choose another source.`;
+        console.log(`[download-queue] ${job2.id}: ${job2.error}`);
+        task.cancel();
+      }, CONNECT_LIMIT_MS);
+      return () => clearTimeout(timer);
+    }
     async function execute(job2) {
       let task;
       let unsubscribe;
@@ -287,7 +306,9 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
         active2.transferring = true;
         task = downloads.enqueue({ ...job2.options, rejectHtml: true, mirrors: void 0, connections: 64, adaptive: true, rangeBytes: 16 * 1024 * 1024, destination: job2.downloadDestination, storageRoot: job2.root, recoverCompleted: true });
         active2.task = task;
-        unsubscribe = task.subscribe((progress) => {
+        job2.received = 0;
+        const unguard = stallGuard(job2, task, job2.options.url);
+        const off = task.subscribe((progress) => {
           if (job2.state === "pausing") return;
           if (ACTIVE.includes(progress.state)) job2.state = progress.state;
           job2.written = progress.written || 0;
@@ -308,6 +329,10 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
           }
           emit2();
         });
+        unsubscribe = () => {
+          off();
+          unguard();
+        };
         await task.done;
         if (job2.artifact.nextAction === "downloaded") route(job2);
         job2.state = job2.artifact.nextAction === "shadowmount" ? "downloaded" : job2.artifact.nextAction === "downloaded" ? "file-downloaded" : job2.artifact.nextAction;
@@ -681,6 +706,8 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
             recoverCompleted: true
           });
           active2.task = task;
+          job2.received = 0;
+          const unguard = stallGuard(job2, task, part.options.url);
           const off = task.subscribe((progress) => {
             if (job2.state === "pausing") return;
             if (ACTIVE.includes(progress.state)) job2.state = progress.state;
@@ -708,6 +735,7 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
             result = await task.done;
           } finally {
             off();
+            unguard();
           }
           part.written = result.written ?? part.total ?? part.written;
           job2.written = job2.parts.reduce((sum, item) => sum + item.written, 0);
