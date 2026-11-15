@@ -1,6 +1,7 @@
 // ../pub-game-store/native/game/DownloadButton.jsx
 // reconstructed from the esbuild bundle in eboot.bin
 // MODIFIED: an entry whose every source is marked unavailable reads as unavailable instead of offering a download that fails.
+// MODIFIED: an error's own words show under its explanation, so a console report says what actually failed.
 
 import '../assets/Inter-Regular.ttf';
 import { jsx, jsxs } from 'react/jsx-runtime';
@@ -228,7 +229,7 @@ import { DownloadFormats, Text, View, motion } from '@ps5-react/core';
         WAITING.includes(shown) ? /* @__PURE__ */ (0, jsx)(ShimmerText, { textStyle: STATUS, children: state }) : /* @__PURE__ */ (0, jsx)(Text, { style: { fontFamily: "Inter-Regular", fontSize: 21, color: "#8a8a94", lineHeight: 30 }, children: state }),
         detail2 ? /* @__PURE__ */ (0, jsx)(Text, { style: { fontFamily: "Inter-Regular", fontSize: 21, color: "#8a8a94", lineHeight: 30 }, children: detail2 }) : null
       ] }),
-      problem ? /* @__PURE__ */ (0, jsx)(ProblemNote, { title: problem.title, action: problem.action }) : notice ? /* @__PURE__ */ (0, jsx)(Text, { style: { width: 408, fontFamily: "Inter-Regular", fontSize: 21, color: "#a3a3ab", numberOfLines: 3, ellipsizeMode: "tail", lineHeight: 30 }, children: notice.slice(0, 160) }) : null,
+      problem ? /* @__PURE__ */ (0, jsx)(ProblemNote, { title: problem.title, action: problem.action, detail: !browser && error2 && cause(error2) !== problem.title ? cause(error2) : null }) : notice ? /* @__PURE__ */ (0, jsx)(Text, { style: { width: 408, fontFamily: "Inter-Regular", fontSize: 21, color: "#a3a3ab", numberOfLines: 3, ellipsizeMode: "tail", lineHeight: 30 }, children: notice.slice(0, 160) }) : null,
       choosing && release ? /* @__PURE__ */ (0, jsx)(
         Choice,
         {

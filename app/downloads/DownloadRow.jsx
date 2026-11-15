@@ -1,5 +1,6 @@
 // ../pub-game-store/native/downloads/DownloadRow.jsx
 // reconstructed from the esbuild bundle in eboot.bin
+// MODIFIED: a failed row also shows the error's own words after the explanation.
 
 import '../assets/Inter-Regular.ttf';
 import { jsx, jsxs } from 'react/jsx-runtime';
@@ -73,7 +74,8 @@ import { Text, View } from '@ps5-react/core';
     const onFocus = () => onFocusRow(job2);
     const meta = [(job2.artifact.format || release.format).toUpperCase(), `${release.provider} ${release.version || ""}`.trim(), job2.root].join(" \xB7 ");
     const problem = job2.error && explainError(job2.error, Boolean(release.parts));
-    const note = problem ? problem.action ? t2("downloads.problem", { title: problem.title, action: problem.action }) : problem.title : state === "downloaded" ? job2.message || t2("downloads.installHint") : "";
+    const detail2 = problem && cause(job2.error) !== problem.title ? cause(job2.error) : null;
+    const note = problem ? [problem.action ? t2("downloads.problem", { title: problem.title, action: problem.action }) : problem.title, detail2].filter(Boolean).join(" \xB7 ") : state === "downloaded" ? job2.message || t2("downloads.installHint") : "";
     const cdn = isOverdriveCdn(release.provider);
     return /* @__PURE__ */ (0, jsxs)(View, { style: cdn ? { position: "relative", borderRadius: 18, backgroundColor: "#17171a" } : { overflow: "hidden", borderRadius: 18, borderWidth: 2, borderColor: "#2a2a2f", backgroundColor: "#17171a" }, children: [
       cdn ? /* @__PURE__ */ (0, jsx)(CdnAura, { radius: 12, width: 904 }) : null,
