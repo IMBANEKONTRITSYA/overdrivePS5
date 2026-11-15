@@ -101,6 +101,8 @@ import { FileSystem, Image } from '@ps5-react/core';
     "1fichier": "1fichier",
     "pippo26442999.github": "Pippo mirror",
     datanodes: "DataNodes",
+    akirabox: "AkiraBox",
+    rootz: "Rootz",
     mediafire: "MediaFire",
     filekeeper: "FileKeeper",
     datavaults: "DataVaults",

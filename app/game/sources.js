@@ -1,6 +1,7 @@
 // ../pub-game-store/native/game/sources.js
 // reconstructed from the esbuild bundle in eboot.bin
 // MODIFIED: Do not advertise download speed for explicitly unavailable sources.
+// MODIFIED: Vikingfile sources form a "capture" class, ranked above hosts whose link must be typed; a failed page source falls over to one.
 
 import { t } from '../i18n/core.js';
 import { sourceKind } from '../state/download-sources.js';
@@ -22,7 +23,8 @@ import { formatBytes } from '../state/size.js';
     const edition2 = split >= 0 && text.slice(split + 3).toLowerCase().startsWith(host2) ? text.slice(0, split) : text;
     return provider.toLowerCase().startsWith(edition2.toLowerCase()) ? "" : edition2;
   }
-  var GATED = /* @__PURE__ */ new Set(["vikingfile", "buzzheavier"]);
+  // How much the user does: "direct" and "page" download by themselves; "capture" opens the host's
+  // page for its check and picks the file link up afterwards; "browser" leaves typing the link to them.
   function access(release) {
     const first = release.parts?.[0]?.sources[0] ?? release;
     let kind;
@@ -32,7 +34,8 @@ import { formatBytes } from '../state/size.js';
       return "browser";
     }
     if (kind === "direct" || kind === "manifest") return "direct";
-    return kind === "browser" || kind === "datanodes" || kind === "unavailable" || GATED.has(kind) ? "browser" : "page";
+    if (kind === "vikingfile") return "capture";
+    return kind === "browser" || kind === "datanodes" || kind === "akirabox" || kind === "unavailable" ? "browser" : "page";
   }
   var SPEED = { "archive.org": "sources.speed.archive", mediafire: "sources.speed.mediafire", "overdrive cdn": "sources.cdnFastest" };
   var isOverdriveCdn = (provider) => /^overdrive\s*cdn$/i.test(provider ?? "");
@@ -74,7 +77,7 @@ import { formatBytes } from '../state/size.js';
     return sameSize(a.sizeBytes, b.sizeBytes) || Boolean(ea) && ea === eb && recordOf(a) !== void 0 && recordOf(a) === recordOf(b);
   }
   var isDlc = ({ label }) => /\bDLCs?\b/i.test(label || "") && !/\b(?:game|full)\b|\+\s*(?:all\s+)?DLCs?\b|\bwith\s+(?:all\s+)?DLCs?\b|\bincl/i.test(label);
-  var GROUP_RANK = { direct: 0, page: 1, browser: 2, unavailable: 3 };
+  var GROUP_RANK = { direct: 0, page: 1, capture: 2, browser: 3, unavailable: 4 };
   var HEALTH_RANK = { ok: 0, flaky: 2 };
   var isBackport = ({ label }) => /\bback\s*port\b/i.test(label || "");
   var hostRank = ({ provider }) => isOverdriveCdn(provider) ? 0 : provider.toLowerCase() === "archive.org" ? 1 : provider.toLowerCase() === "mediafire" ? 2 : 3;
@@ -93,17 +96,17 @@ import { formatBytes } from '../state/size.js';
     return releases.map(ranked).sort(compare)[0]?.index ?? 0;
   }
   function fallbacks(releases, selected) {
-    return releases.map(ranked).filter(({ release, index, rank }) => index !== selected && rank[3] <= GROUP_RANK.page && equivalent(releases[selected], release)).sort(compare).map(({ release }) => release);
+    return releases.map(ranked).filter(({ release, index, rank }) => index !== selected && rank[3] <= GROUP_RANK.capture && equivalent(releases[selected], release)).sort(compare).map(({ release }) => release);
   }
   function sourceSections(releases) {
-    const sections = ["direct", "page", "browser", "dlc", "unavailable"].map((group) => ({ group, items: [] }));
+    const sections = ["direct", "page", "capture", "browser", "dlc", "unavailable"].map((group) => ({ group, items: [] }));
     releases.forEach((release, index) => {
       const { group } = describeSource(release);
       const into = group !== "unavailable" && isDlc(release) ? "dlc" : group;
       sections.find((section) => section.group === into).items.push({ release, index });
     });
     const links = ({ release }) => release.parts?.length ?? 1;
-    sections[2].items.sort((a, b) => links(a) - links(b));
+    sections[3].items.sort((a, b) => links(a) - links(b));
     return sections.filter((section) => section.items.length);
   }
 
