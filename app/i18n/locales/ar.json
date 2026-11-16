@@ -387,6 +387,7 @@
   "sources.speed.archive": "اتصالات متعددة في آن واحد",
   "sources.speed.mediafire": "محدود بـ 3 MB/s تقريباً",
   "sources.title": "مصدر التحميل",
+  "sources.unreachable": "لا يستجيب على شبكتك",
   "time.hoursMinutes": "{hours} س {minutes} دقيقة",
   "time.minutes": "{n} دقيقة",
   "time.seconds": "{n} ثانية",

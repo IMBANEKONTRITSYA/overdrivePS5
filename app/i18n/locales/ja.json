@@ -387,6 +387,7 @@
   "sources.speed.archive": "多数の接続を同時に使用",
   "sources.speed.mediafire": "約3 MB/sに制限",
   "sources.title": "ダウンロードの入手元",
+  "sources.unreachable": "お使いのネットワークでは応答しません",
   "time.hoursMinutes": "{hours}時間{minutes}分",
   "time.minutes": "{n}分",
   "time.seconds": "{n}秒",

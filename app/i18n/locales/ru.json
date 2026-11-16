@@ -387,6 +387,7 @@
   "sources.speed.archive": "Много подключений одновременно",
   "sources.speed.mediafire": "Ограничено около 3 МБ/с",
   "sources.title": "Источник загрузки",
+  "sources.unreachable": "Не отвечает в вашей сети",
   "time.hoursMinutes": "{hours} ч {minutes} мин",
   "time.minutes": "{n} мин",
   "time.seconds": "{n} с",

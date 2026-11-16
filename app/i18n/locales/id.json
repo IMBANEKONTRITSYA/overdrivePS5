@@ -387,6 +387,7 @@
   "sources.speed.archive": "Banyak koneksi sekaligus",
   "sources.speed.mediafire": "Dibatasi sekitar 3 MB/s",
   "sources.title": "Sumber unduhan",
+  "sources.unreachable": "Tidak merespons di jaringan Anda",
   "time.hoursMinutes": "{hours} j {minutes} menit",
   "time.minutes": "{n} menit",
   "time.seconds": "{n} det",

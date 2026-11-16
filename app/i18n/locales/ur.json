@@ -387,6 +387,7 @@
   "sources.speed.archive": "ایک ساتھ متعدد رابطے",
   "sources.speed.mediafire": "تقریباً 3 MB/s کے قریب محدود",
   "sources.title": "ڈاؤن لوڈ ذریعہ",
+  "sources.unreachable": "آپ کے نیٹ ورک پر جواب نہیں دیتا",
   "time.hoursMinutes": "{hours} گھنٹے {minutes} منٹ",
   "time.minutes": "{n} منٹ",
   "time.seconds": "{n} سیکنڈ",

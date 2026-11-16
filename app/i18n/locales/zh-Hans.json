@@ -387,6 +387,7 @@
   "sources.speed.archive": "支持多连接同时下载",
   "sources.speed.mediafire": "速度上限约 3 MB/s",
   "sources.title": "下载来源",
+  "sources.unreachable": "在你的网络中无响应",
   "time.hoursMinutes": "{hours} 小时 {minutes} 分钟",
   "time.minutes": "{n} 分钟",
   "time.seconds": "{n} 秒",

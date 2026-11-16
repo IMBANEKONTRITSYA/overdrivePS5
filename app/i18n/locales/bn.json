@@ -387,6 +387,7 @@
   "sources.speed.archive": "একবারে অনেক সংযোগ",
   "sources.speed.mediafire": "3 MB/s এর কাছাকাছি সীমাবদ্ধ",
   "sources.title": "ডাউনলোড উৎস",
+  "sources.unreachable": "আপনার নেটওয়ার্কে সাড়া দেয় না",
   "time.hoursMinutes": "{hours} ঘ {minutes} মিনিট",
   "time.minutes": "{n} মিনিট",
   "time.seconds": "{n} সেকেন্ড",

@@ -2,9 +2,11 @@
 // reconstructed from the esbuild bundle in eboot.bin
 // MODIFIED: Do not advertise download speed for explicitly unavailable sources.
 // MODIFIED: Vikingfile sources form a "capture" class, ranked above hosts whose link must be typed; a failed page source falls over to one.
+// MODIFIED: a source on a host that did not answer on this network ranks last, says so, and is no fallback.
 
 import { t } from '../i18n/core.js';
 import { sourceKind } from '../state/download-sources.js';
+import { unreachableSource } from '../state/host-health.js';
 import { formatBytes } from '../state/size.js';
 
   var KIND = {
@@ -48,13 +50,15 @@ import { formatBytes } from '../state/size.js';
       parts ? t("sources.parts", { count: parts }) : null
     ].filter(Boolean).join(" \xB7 ");
     const reach = access(release);
-    const speed = release.unavailableReason ? null : SPEED[release.provider.toLowerCase()];
+    const unreachable = !release.unavailableReason && unreachableSource(link(release));
+    const speed = release.unavailableReason || unreachable ? null : SPEED[release.provider.toLowerCase()];
     return {
       name: release.provider.replace(/^www\./, ""),
-      detail: speed ? [detail2, t(speed)].filter(Boolean).join(" \xB7 ") : detail2,
+      detail: [detail2, speed && t(speed), unreachable && t("sources.unreachable")].filter(Boolean).join(" \xB7 "),
       size: release.sizeBytes ? formatBytes(release.sizeBytes) : null,
       group: release.unavailableReason ? "unavailable" : reach,
-      reason: release.unavailableReason ?? null
+      reason: release.unavailableReason ?? null,
+      unreachable
     };
   }
   var version = (value) => {
@@ -81,9 +85,11 @@ import { formatBytes } from '../state/size.js';
   var HEALTH_RANK = { ok: 0, flaky: 2 };
   var isBackport = ({ label }) => /\bback\s*port\b/i.test(label || "");
   var hostRank = ({ provider }) => isOverdriveCdn(provider) ? 0 : provider.toLowerCase() === "archive.org" ? 1 : provider.toLowerCase() === "mediafire" ? 2 : 3;
+  var link = (release) => (release.parts?.[0]?.sources[0] ?? release).browserUrl || (release.parts?.[0]?.sources[0] ?? release).url;
   var ranked = (release, index) => ({ release, index, rank: [
     isDlc(release) ? 1 : 0,
     release.unavailableReason ? 1 : 0,
+    unreachableSource(link(release)) ? 1 : 0,
     hostRank(release),
     GROUP_RANK[describeSource(release).group],
     HEALTH_RANK[release.health] ?? 1,
@@ -96,7 +102,7 @@ import { formatBytes } from '../state/size.js';
     return releases.map(ranked).sort(compare)[0]?.index ?? 0;
   }
   function fallbacks(releases, selected) {
-    return releases.map(ranked).filter(({ release, index, rank }) => index !== selected && rank[3] <= GROUP_RANK.capture && equivalent(releases[selected], release)).sort(compare).map(({ release }) => release);
+    return releases.map(ranked).filter(({ release, index, rank }) => index !== selected && !rank[2] && rank[4] <= GROUP_RANK.capture && equivalent(releases[selected], release)).sort(compare).map(({ release }) => release);
   }
   function sourceSections(releases) {
     const sections = ["direct", "page", "capture", "browser", "dlc", "unavailable"].map((group) => ({ group, items: [] }));

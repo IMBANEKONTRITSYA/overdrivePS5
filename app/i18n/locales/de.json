@@ -387,6 +387,7 @@
   "sources.speed.archive": "Viele Verbindungen gleichzeitig",
   "sources.speed.mediafire": "Begrenzt auf etwa 3 MB/s",
   "sources.title": "Download-Quelle",
+  "sources.unreachable": "Antwortet in deinem Netz nicht",
   "time.hoursMinutes": "{hours} h {minutes} min",
   "time.minutes": "{n} min",
   "time.seconds": "{n} s",

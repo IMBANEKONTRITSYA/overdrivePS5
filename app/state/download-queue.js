@@ -6,11 +6,13 @@
 // MODIFIED: a folder publication records its destination before the rename, so a crash in between recovers.
 // MODIFIED: cancelling an install retry no longer leaves the job flagged as cancelling.
 // MODIFIED: a transfer that gets no byte within 90 seconds is cancelled with a connection error and falls over to the next source.
+// MODIFIED: a host that gives no answer is remembered; a blocked Vikingfile domain gives way to its mirror for the page, the capture and the browser.
 
 import { INCOMPLETE_PART, STALE_PARTIAL, cause } from '../downloads/errors.js';
 import { t } from '../i18n/core.js';
 import { archivePassword } from './archive-password.js';
 import { BrowserRequired, archiveRefusal, cancellation, createSourceResolver, sourceKind, webURL } from './download-sources.js';
+import { markReachable, markUnreachable, noAnswer, reachableURL } from './host-health.js';
 import { readJSON } from './read-json.js';
 import { mountedImages, shadowRequest, within2 } from './shadowmount.js';
 import { MARGIN2, spaceShortfall, stillNeeded } from './space.js';
@@ -231,6 +233,12 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
       delete job2.install;
       change();
     }
+    // The release, with a blocked Vikingfile domain swapped for its mirror where the mirror answers.
+    function reachable(release) {
+      const url = release.browserUrl || release.url;
+      const swapped = url && reachableURL(url);
+      return !swapped || swapped === url ? release : { ...release, ...release.url === url && { url: swapped }, ...release.browserUrl === url && { browserUrl: swapped } };
+    }
     const canInstall = () => Boolean(packages) && platform === "ps5";
     // A host that never answers (blocked on this network, or down) keeps the engine retrying its
     // connections for many minutes with nothing to show but "connecting". After this long without a
@@ -281,7 +289,9 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
             job2.options = formats.manifest(await response.json());
           } else {
             if (!job2.release.url && !job2.release.browserUrl) throw new Error("This release has no download URL.");
-            const resolved = job2.directURL || sourceKind(job2.release) !== "direct" ? await sources.resolve(job2.release, { signal, directURL: job2.directURL }) : { url: webURL(job2.release.url).url };
+            const source2 = reachable(job2.release);
+            const resolved = job2.directURL || sourceKind(source2) !== "direct" ? await sources.resolve(source2, { signal, directURL: job2.directURL }) : { url: webURL(source2.url).url };
+            if (!job2.directURL) markReachable(source2.browserUrl || source2.url);
             job2.options = {
               ...resolved,
               rejectHtml: true,
@@ -344,6 +354,10 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
         if (job2.state === "installer-required" && canInstall()) await install(job2);
       } catch (error2) {
         console.log("[download-queue] transfer stopped:", error2.message);
+        if (noAnswer(cause(error2.message))) {
+          const attempted = job2.parts ? job2.currentSource : reachable(job2.release);
+          markUnreachable(job2.options?.url && active2.transferring ? job2.options.url : attempted.browserUrl || attempted.url);
+        }
         // The engine words every 401/403 as a possible browser check; from Archive.org it is a
         // restricted or removed item, so it fails over like a dead link and reads as one.
         const refused = archiveRefusal(job2.parts ? job2.currentSource : job2.release, cause(error2.message));
@@ -683,10 +697,11 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
           job2.message = t("downloads.part", { part: index + 1, parts: job2.parts.length });
           active2.transferring = false;
           change();
-          const source2 = job2.release.parts[index].sources[part.sourceIndex || 0];
+          const source2 = reachable(job2.release.parts[index].sources[part.sourceIndex || 0]);
           job2.currentSource = source2;
           if (!part.options) {
             const resolved = await sources.resolve(source2, { signal, directURL: job2.directURL });
+            if (!job2.directURL) markReachable(source2.browserUrl || source2.url);
             part.options = { ...resolved, expectedBytes: source2.sizeBytes || void 0, sha256: source2.sha256 || void 0 };
             delete job2.directURL;
             change();
@@ -1081,12 +1096,13 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
         const linkPage = vikingLinkPage(source2);
         console.log(linkPage ? "[browser-capture] link page; any Vikingfile file" : "[browser-capture] reading public file metadata");
         const metadata = linkPage ? linkPageMetadata(source2) : await describeVikingCapture(http, source2, session.cancel.signal);
+        if (!linkPage) markReachable(source2.browserUrl || source2.url);
         if (!current()) return;
         session.task = browserCapture.capture({ prefix: VIKING_PREFIX, suffix: `/${metadata.filename}`, timeoutSeconds: 180 });
         job2.captureState = "capturing";
         change();
         console.log("[browser-capture] capture submitted; opening browser");
-        if (!linking?.openURL(webURL(job2.browserUrl).url)) throw new Error("The browser could not open. Retry or enter the final file link.");
+        if (!linking?.openURL(webURL(reachableURL(job2.browserUrl)).url)) throw new Error("The browser could not open. Retry or enter the final file link.");
         const result = await session.task.done;
         if (!current()) return;
         job2.captureState = "validating";
@@ -1109,6 +1125,7 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
       } catch (error2) {
         if (!current() && !(handingOff && jobs.includes(job2) && job2.state === "queued" && active2?.job !== job2)) return;
         console.log("[browser-capture] failed:", error2.message);
+        if (noAnswer(error2.message)) markUnreachable(source2.browserUrl || source2.url);
         session.cancel.cancel();
         session.task?.cancel();
         captures.delete(job2.id);
@@ -1264,7 +1281,7 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
       openBrowser(id) {
         const job2 = find(id);
         if (job2.state !== "awaiting-browser") return;
-        const source2 = job2.parts ? job2.currentSource : job2.release;
+        const source2 = reachable(job2.parts ? job2.currentSource : job2.release);
         if (browserCapture && (sourceKind(source2) === "vikingfile" || vikingLinkPage(source2))) {
           if (captures.has(id)) return;
           if (captures.size || active2) throw new Error("Wait for the current queue task before opening Vikingfile, so its captured link can start immediately.");
@@ -1276,7 +1293,7 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
           void captureBrowser(job2, source2, session);
           return;
         }
-        if (!linking?.openURL(webURL(job2.browserUrl).url)) throw new Error("The browser could not open. Open this source on another device.");
+        if (!linking?.openURL(webURL(reachableURL(job2.browserUrl)).url)) throw new Error("The browser could not open. Open this source on another device.");
         job2.message = t("downloads.afterVerification");
         change();
       },
