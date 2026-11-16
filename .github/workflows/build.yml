@@ -5,6 +5,11 @@ name: build
 # very files that were tested.
 on:
   workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish the release right away (installed apps update on their next start) instead of leaving a draft"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -106,5 +111,8 @@ jobs:
               echo "$tag is already published: raise the version in app/version.js" >&2
               exit 1 ;;
           esac
+          if [ "${{ inputs.publish }}" = "true" ]; then
+            gh release edit "$tag" --draft=false --latest --notes "Overdrive $tag, built from $GITHUB_SHA."
+          fi
           gh release view "$tag" --json isDraft,tagName,assets \
             --jq '"\(.tagName) draft=\(.isDraft) " + ([.assets[] | "\(.name) \(.size)"] | join(", "))'
