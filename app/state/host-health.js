@@ -28,10 +28,16 @@ import { savedList } from './saved.js';
     const mirror = host2 && MIRRORS[host2];
     return mirror ? String(url).replace(/^(https?:\/\/)(?:www\.)?[^/?#:]+/i, `$1${mirror}`) : null;
   }
-  // The URL to try: the mirror when this host is remembered as unreachable and the mirror is not.
+  // vikingfile.com itself redirects to vik1ngfile.site, so the mirror is the domain every network
+  // must reach anyway; going there first skips a block on the first hop.
+  var PREFERRED = { "vikingfile.com": "vik1ngfile.site" };
+  // The URL to try: the preferred domain of the pair, unless it is remembered as silent and the other is not.
   function reachableURL(url) {
     const mirror = alternateOf(url);
-    return mirror && unreachableSince(url) && !unreachableSince(mirror) ? mirror : url;
+    if (!mirror) return url;
+    const first = PREFERRED[hostOf(url)] ? mirror : url;
+    const second = first === url ? mirror : url;
+    return unreachableSince(first) && !unreachableSince(second) ? second : first;
   }
   function markUnreachable(url) {
     const host2 = hostOf(url);
