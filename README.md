@@ -274,6 +274,16 @@ Two fixes in the vendored framework, both in the build tooling and both reported
   which reads zstd only from Python 3.14 while the documented minimum is 3.12. It now falls back
   to the `zstd` command.
 
+One change in the browser capture payload, made for this fork's users:
+
+- `ps5-react/native/ps5/payloads/browser/browser_url.c` (with `browser_match.c/.h`,
+  `browser_scan.h`, `payloads/browser_capture.c` and `native/shared/browser_capture_api.cpp`)
+  accepted only Vikingfile's `/d/<id>/<file>` link. It now holds a table of host link shapes:
+  Vikingfile, AkiraBox (`/download/<token>/<file>`) and DataNodes' download proxy
+  (`tunnel<n>.dlproxy.uk/download/<token>?sig=…`), each capture bound to the host it asked for,
+  with a 1024-byte route buffer for the long DataNodes links. The scanner, its read budget and
+  its safety limits are unchanged; `tools/test_browser_capture.py` covers the new shapes.
+
 Nothing else in the framework is changed.
 
 </details>
