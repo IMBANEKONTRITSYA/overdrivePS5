@@ -19,6 +19,8 @@ Homebrew-магазин игр для PS5 на фреймворке [ps5-react](
 | `app/assets.config.js` | Какие глифы запекаются в шрифты |
 | `ps5-react/` | Vendored фреймворк — **не редактировать** |
 | `packaging/make-exfat.sh` | Сборка exFAT-образа для ShadowMount+ |
+| `packaging/fetch-deps.sh` | Зависимости сборки с зеркал (апстрим-репозитории удалены) |
+| `tools/sync-pegasus.mjs` | Обновление ссылок каталога с pegasus-dl.dev (агрегатор, из которого собран каталог) |
 | `.github/workflows/build.yml` | Сборка в CI |
 
 ## Сборка
@@ -26,6 +28,7 @@ Homebrew-магазин игр для PS5 на фреймворке [ps5-react](
 Только Linux (Ubuntu 24.04), как в CI. Нативный превью ps5-react работает только на macOS (Apple Silicon), так что на Linux проверить результат можно только на консоли.
 
 ```bash
+bash packaging/fetch-deps.sh   # platform и ps5-opengl SDK с зеркал: апстрим-репозитории удалены с GitHub
 cd ps5-react
 python3 tools/build_ps5.py --app-dir ../app --llvm /usr/bin
 cd ..
@@ -58,19 +61,20 @@ CI запускается только вручную (Run workflow): кладё
 - `app/data/pages/<id>.json` — `{about, shots, summary}`.
 - Файлов ~2000 на каждый каталог; читаются с консоли через `FileSystem.readFile('/app0/data/...')` (см. `app/state/catalog.js`). Папки перечислены в `resources` в `app.json`.
 - Это сгенерированные данные: не правь их массово руками и не меняй формат без правки читающего кода в `app/state/`.
+- Обновление ссылок: `node tools/sync-pegasus.mjs` (с сети) или `--from <папка с catalogs.json и <slug>.json>`; `--dry-run` только считает. Записи `source: pegasus-*` заменяются свежими, записи других источников (`orbit`, `blackbox`, `archive-discovery`) и проверенные прямые ссылки сохраняются, id неизменившихся ссылок остаются прежними; у игр пересчитываются `providers`/`direct`, для новых Title ID создаются карточка и страница.
 
 ## Локализация
 
-- 14 языков: en, de, es, fr, it, pt-BR, ru, id, ja, zh-Hans, ar, ur, hi, bn. Исходный — `en` (README пока пишет «13 languages», итальянский добавлен позже).
+- 14 языков: en, de, es, fr, it, pt-BR, ru, id, ja, zh-Hans, ar, ur, hi, bn. Исходный — `en`.
 - Ключи плоские: `"area.name": "..."`, параметры `{count}`, множественное число — ICU: `{count, plural, one {# game} other {# games}}`.
-- Новый ключ → добавить во **все** `app/i18n/locales/*.json`. Сейчас в `en`/`it` 418 ключей, в остальных меньше (нет `update.*`, `capture.*`, `downloads.notice.captured`).
+- Новый ключ → добавить во **все** `app/i18n/locales/*.json`. Во всех 14 файлах одинаковый набор ключей (421); проверка — скрипт в скилле `add-i18n-string`.
 - Ар/урду — RTL: учитывай `rtl` из `useLocale()` в отступах.
 - Шрифты запекаются только для европейских глифов (`assets.config.js`); CJK/индийские/арабские — через `textFonts` в `app.json`.
 
 ## Обновления
 
 Апдейтер уже есть: `app/state/update.js` (лента), `app/state/updater.js`, `app/ui/UpdateDialog.jsx`.
-Лента `FEED` смотрит на `MyLuxy/overdrive/releases/latest` — релизы этого репозитория до установленных копий не дойдут, пока FEED не поменять.
+Лента `FEED` смотрит на `IMBANEKONTRITSYA/overdrivePS5/releases/latest` — туда же CI кладёт сборки, так что опубликованный релиз доходит до установленных копий. Копии, собранные из апстрима (MyLuxy/overdrive), эту ленту не видят. Переопределение для тестов — файл `update-feed` (см. `FEED_OVERRIDES` в `app/state/update.js`).
 
 ## Git
 
@@ -79,7 +83,7 @@ CI запускается только вручную (Run workflow): кладё
 
 ## Никогда
 
-- Не редактировать `ps5-react/` (vendored; обновлять только целиком из апстрима).
+- Не редактировать `ps5-react/` (vendored; обновлять только целиком из апстрима). Исключения, согласованные с владельцем и описанные в README («Fixes over upstream ps5-react»): два фикса сборки и таблица форм ссылок в захватчике браузера (`native/ps5/payloads/browser/browser_url.c` и связанные файлы) — новый хост добавляется туда + в `app/state/capture-hosts.js`, с тестом в `tools/tests/browser_capture_test.c`.
 - Не реформатировать и не «модернизировать» реконструированный код без задачи.
 - Не коммитить секреты и токены.
 - Не менять формат `app/data/` без обратной совместимости.

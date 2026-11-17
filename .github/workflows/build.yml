@@ -5,6 +5,11 @@ name: build
 # very files that were tested.
 on:
   workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish the release right away (installed apps update on their next start) instead of leaving a draft"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -50,6 +55,12 @@ jobs:
         with:
           path: ps5-react/.deps
           key: deps-${{ hashFiles('ps5-react/dependencies.lock.json') }}
+
+      - name: Fetch the dependencies whose upstream is gone
+        # blackbearreloaded/ps5-homebrew-ui and the ps5-opengl SDK release no longer exist on GitHub.
+        # The build still verifies the pinned revision and sha256, so a mirror can only supply the
+        # exact bytes the lock file names.
+        run: bash packaging/fetch-deps.sh
 
       - name: Build
         working-directory: ps5-react
@@ -100,5 +111,8 @@ jobs:
               echo "$tag is already published: raise the version in app/version.js" >&2
               exit 1 ;;
           esac
+          if [ "${{ inputs.publish }}" = "true" ]; then
+            gh release edit "$tag" --draft=false --latest --notes "Overdrive $tag, built from $GITHUB_SHA."
+          fi
           gh release view "$tag" --json isDraft,tagName,assets \
             --jq '"\(.tagName) draft=\(.isDraft) " + ([.assets[] | "\(.name) \(.size)"] | join(", "))'

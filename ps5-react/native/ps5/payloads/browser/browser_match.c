@@ -11,8 +11,10 @@ static bool boundary(unsigned char c) {
 }
 bool browser_match(void *context, const unsigned char *bytes, size_t length) {
     BrowserMatch *match = context;
-    for (size_t which = 0; which < 2; which++) {
+    for (size_t which = 0; which < browser_capture_prefix_count; which++) {
     const char *prefix = browser_capture_prefixes[which];
+    /* Overdrive: a capture asked for one host returns only that host's routes (either of its domains). */
+    if (match->prefix && !browser_capture_same_host(match->prefix, prefix)) continue;
     const size_t plen = strlen(prefix);
     for (size_t step = 1; step <= 2; step++) {
         for (size_t i = 0; (plen + 1) * step <= length && i <= length - (plen + 1) * step; i++) {

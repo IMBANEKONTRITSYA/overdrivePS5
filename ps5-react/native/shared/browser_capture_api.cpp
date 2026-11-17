@@ -16,15 +16,22 @@ bool text(JSContext* ctx, JSValueConst value, std::string& out) {
   JS_FreeCString(ctx, input);
   return valid;
 }
+// Overdrive: the download hosts whose final link the payload knows the shape of (payloads/browser/browser_url.c).
+bool known_prefix(const std::string& prefix) {
+  static const char* const prefixes[] = {"https://vikingfile.com/d/", "https://vik1ngfile.site/d/",
+    "https://akirabox.com/download/", "https://akirabox.to/download/", "https://tunnel"};
+  for (const char* known : prefixes) if (prefix == known) return true;
+  return false;
+}
 JSValue capture(JSContext* ctx, JSValueConst, int argc, JSValueConst* argv) {
   std::string prefix, suffix;
   double timeout = 0;
-  if (argc < 3 || !text(ctx, argv[0], prefix) || prefix != "https://vikingfile.com/d/" ||
+  if (argc < 3 || !text(ctx, argv[0], prefix) || !known_prefix(prefix) ||
       !text(ctx, argv[1], suffix) || suffix.empty() || suffix[0] != '/' ||
       suffix.find('/', 1) != std::string::npos || suffix.find('\\') != std::string::npos ||
       suffix.find("..") != std::string::npos || JS_ToFloat64(ctx, &timeout, argv[2]) ||
       !std::isfinite(timeout) || timeout < 1 || timeout > 180 || std::floor(timeout) != timeout)
-    return JS_ThrowTypeError(ctx, "browser.capture: expected the Vikingfile prefix, /filename (160 UTF-8 bytes), and 1..180 seconds");
+    return JS_ThrowTypeError(ctx, "browser.capture: expected a known download host prefix, /filename (160 UTF-8 bytes), and 1..180 seconds");
   for (const unsigned char c : suffix) if (c < 32 || c == 127)
     return JS_ThrowTypeError(ctx, "browser.capture: filename contains a control character");
   std::string error;

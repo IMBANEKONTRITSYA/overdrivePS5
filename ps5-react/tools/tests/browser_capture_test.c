@@ -68,6 +68,43 @@ int main(void) {
       assert(!strcmp(match.url, candidate));
     }
   }
+  // Overdrive: AkiraBox and DataNodes routes, and a capture bound to the host it asked for.
+  const char *akira = "https://akirabox.com/download/e1.gtv9Fj9Y8vu_z9dJ_87aIiL-mBMJAzbx6GkR4zDRU1AXDk3dBwDZYsPVHo5gU_zm/PPSA28000.7z";
+  assert(browser_capture_url("PPSA28000.7z", akira));
+  assert(browser_capture_url("", akira));
+  assert(!browser_capture_url("Other.7z", akira));
+  assert(!browser_capture_url("", "https://akirabox.com/download/short/PPSA28000.7z"));
+  assert(!browser_capture_url("", "https://akirabox.com.evil.test/download/e1.gtv9Fj9Y8vu_z9dJ_87aIiL/PPSA28000.7z"));
+  char nodes[700];
+  snprintf(nodes, sizeof nodes, "https://tunnel5.dlproxy.uk/download/%0*d?sig=OlKANsG4ULpRrih41ZZ3frw4RLjpCyB0IP-0TF1xk5I", 430, 7);
+  assert(browser_capture_url("", nodes));
+  assert(!browser_capture_url("PPSA28000.7z", nodes));
+  assert(!browser_capture_url("", "https://tunnel5.dlproxy.uk/download/abcdefghijklmnopqrstuvwxyz"));
+  assert(!browser_capture_url("", "https://tunnel5.dlproxy.uk.evil.test/download/abcdefghijklmnopqrstuvwxyz?sig=abcdefghijklmnopqrstuvwxyz"));
+  assert(!browser_capture_url("", "https://tunnelx.dlproxy.uk/download/abcdefghijklmnopqrstuvwxyz?sig=abcdefghijklmnopqrstuvwxyz"));
+  BrowserMatch bound = {.filename = "", .prefix = "https://tunnel"};
+  memset(memory.bytes, 0, memory.length);
+  for (size_t i = 0; i < strlen(nodes); i++) memory.bytes[PROBE_CHUNK - 21 + i] = (unsigned char)nodes[i];
+  {
+    ProbeReader reader = {.context = &memory, .read = read_memory, .active = active,
+      .match = browser_match, .match_context = &bound, .remaining = memory.length};
+    assert(probe_scan_region(&reader, 0, memory.length, "https://tunnel") == PROBE_FOUND);
+    assert(!strcmp(bound.url, nodes));
+  }
+  // The same bytes hold no Vikingfile route, so a Vikingfile-bound capture finds nothing.
+  BrowserMatch other = {.filename = "", .prefix = "https://vikingfile.com/d/"};
+  assert(!browser_match(&other, memory.bytes, memory.length));
+  memset(memory.bytes, 0, memory.length);
+  for (size_t i = 0; i < strlen(url); i++) memory.bytes[PROBE_CHUNK - 21 + i] = (unsigned char)url[i];
+  assert(!browser_match(&bound, memory.bytes, memory.length));
+  assert(browser_capture_known_prefix("https://akirabox.to/download/") && !browser_capture_known_prefix("https://akirabox.to/"));
+  // A Vikingfile-bound capture still accepts the mirror domain, the page redirects there.
+  BrowserMatch viking = {.filename = "", .prefix = "https://vikingfile.com/d/"};
+  const char *mirror = "https://vik1ngfile.site/d/Ab01234567/Game.pkg";
+  memset(memory.bytes, 0, memory.length);
+  for (size_t i = 0; i < strlen(mirror); i++) memory.bytes[PROBE_CHUNK - 21 + i] = (unsigned char)mirror[i];
+  assert(browser_match(&viking, memory.bytes, memory.length) && !strcmp(viking.url, mirror));
+  assert(!browser_match(&bound, memory.bytes, memory.length));
   free(memory.bytes);
-  puts("browser matcher/scanner: ASCII, UTF-16, block overlap, holes, cancellation, budget and URL binding passed");
+  puts("browser matcher/scanner: ASCII, UTF-16, block overlap, holes, cancellation, budget, URL binding and host shapes passed");
 }

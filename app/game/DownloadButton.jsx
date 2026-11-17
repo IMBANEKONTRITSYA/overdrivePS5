@@ -1,5 +1,7 @@
 // ../pub-game-store/native/game/DownloadButton.jsx
 // reconstructed from the esbuild bundle in eboot.bin
+// MODIFIED: an entry whose every source is marked unavailable reads as unavailable instead of offering a download that fails.
+// MODIFIED: an error's own words show under its explanation, so a console report says what actually failed.
 
 import '../assets/Inter-Regular.ttf';
 import { jsx, jsxs } from 'react/jsx-runtime';
@@ -66,10 +68,13 @@ import { DownloadFormats, Text, View, motion } from '@ps5-react/core';
     const need = spaceNeeded(release, roots[storage]);
     const lacking = download.status === "idle" && need && free[storage] !== null && free[storage] < need + MARGIN2;
     const stale = ["paused", "failed"].includes(download.status) && STALE_PARTIAL.test(cause(error2));
-    const status = lacking ? "no-space" : stale ? "stale" : download.status;
+    // Every source marked unavailable: the entry is browseable, not downloadable, and says so instead of
+    // offering a Download that can only fail.
+    const gone = download.status === "idle" && releases.length > 0 && !canDownload(game);
+    const status = gone ? "unavailable" : lacking ? "no-space" : stale ? "stale" : download.status;
     const begin = () => {
       if (stale) restart();
-      else if (!lacking) download.advance();
+      else if (!lacking && !gone) download.advance();
     };
     const { openEdition, focusLater, push } = useNavActions();
     const editions = editionsOf(game);
@@ -114,7 +119,7 @@ import { DownloadFormats, Text, View, motion } from '@ps5-react/core';
     const sizeless = inProgress && !job2?.total;
     const amount = sizeless ? formatBytes(job2?.written || 0) : formatPercent2(Math.round(progress * 100));
     const shown = job2 && shownState(job2) === "finishing" ? "finishing" : status;
-    const [state, line] = statusLine(stale ? download.status : shown, progress, sizeGb);
+    const [state, line] = statusLine(stale ? download.status : shown, progress, sizeGb, gone);
     const detail2 = sizeless ? t2("download.soFar", { size: formatBytes(job2?.written || 0) }) : line;
     const problem = browser ? {
       title: step ? t2("download.browser.partTitle", step) : t2("download.browser.title"),
@@ -224,7 +229,7 @@ import { DownloadFormats, Text, View, motion } from '@ps5-react/core';
         WAITING.includes(shown) ? /* @__PURE__ */ (0, jsx)(ShimmerText, { textStyle: STATUS, children: state }) : /* @__PURE__ */ (0, jsx)(Text, { style: { fontFamily: "Inter-Regular", fontSize: 21, color: "#8a8a94", lineHeight: 30 }, children: state }),
         detail2 ? /* @__PURE__ */ (0, jsx)(Text, { style: { fontFamily: "Inter-Regular", fontSize: 21, color: "#8a8a94", lineHeight: 30 }, children: detail2 }) : null
       ] }),
-      problem ? /* @__PURE__ */ (0, jsx)(ProblemNote, { title: problem.title, action: problem.action }) : notice ? /* @__PURE__ */ (0, jsx)(Text, { style: { width: 408, fontFamily: "Inter-Regular", fontSize: 21, color: "#a3a3ab", numberOfLines: 3, ellipsizeMode: "tail", lineHeight: 30 }, children: notice.slice(0, 160) }) : null,
+      problem ? /* @__PURE__ */ (0, jsx)(ProblemNote, { title: problem.title, action: problem.action, detail: !browser && error2 && cause(error2) !== problem.title ? cause(error2) : null }) : notice ? /* @__PURE__ */ (0, jsx)(Text, { style: { width: 408, fontFamily: "Inter-Regular", fontSize: 21, color: "#a3a3ab", numberOfLines: 3, ellipsizeMode: "tail", lineHeight: 30 }, children: notice.slice(0, 160) }) : null,
       choosing && release ? /* @__PURE__ */ (0, jsx)(
         Choice,
         {

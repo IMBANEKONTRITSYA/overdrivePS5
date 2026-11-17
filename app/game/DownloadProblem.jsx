@@ -1,5 +1,6 @@
 // ../pub-game-store/native/game/DownloadProblem.jsx
 // reconstructed from the esbuild bundle in eboot.bin
+// MODIFIED: the problem note can show the engine's own words under the explanation, for reports from the console.
 
 import '../assets/Inter-Regular.ttf';
 import { Fragment, jsx, jsxs } from 'react/jsx-runtime';
@@ -9,12 +10,13 @@ import { Icon } from '../ui/Icon.jsx';
 import { colors } from '../ui/colors.js';
 import { Text, View, useIsFocused } from '@ps5-react/core';
 
-  function ProblemNote({ title, action }) {
+  function ProblemNote({ title, action, detail: detail2 }) {
     return /* @__PURE__ */ (0, jsxs)(View, { style: { width: 408, flexDirection: "row", gap: 15 }, children: [
       /* @__PURE__ */ (0, jsx)(Icon, { name: "alert", size: 16, color: colors.fg }),
       /* @__PURE__ */ (0, jsxs)(View, { style: { flex: 1, gap: 3 }, children: [
         /* @__PURE__ */ (0, jsx)(Text, { style: { fontFamily: "Inter-Regular", fontSize: 21, fontWeight: 600, color: "#f2f2f3", numberOfLines: 2, ellipsizeMode: "tail", lineHeight: 30 }, children: title }),
-        action ? /* @__PURE__ */ (0, jsx)(Text, { style: { fontFamily: "Inter-Regular", fontSize: 21, color: "#a3a3ab", numberOfLines: 3, ellipsizeMode: "tail", lineHeight: 30 }, children: action }) : null
+        action ? /* @__PURE__ */ (0, jsx)(Text, { style: { fontFamily: "Inter-Regular", fontSize: 21, color: "#a3a3ab", numberOfLines: 3, ellipsizeMode: "tail", lineHeight: 30 }, children: action }) : null,
+        detail2 ? /* @__PURE__ */ (0, jsx)(Text, { style: { fontFamily: "Inter-Regular", fontSize: 18, color: "#8a8a94", numberOfLines: 2, ellipsizeMode: "tail", lineHeight: 24 }, children: detail2 }) : null
       ] })
     ] });
   }

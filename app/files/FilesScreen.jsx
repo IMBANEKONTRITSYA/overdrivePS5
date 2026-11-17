@@ -1,5 +1,6 @@
 // ../pub-game-store/native/files/FilesScreen.jsx
 // reconstructed from the esbuild bundle in eboot.bin
+// MODIFIED: a deletion the Files guard refused says why, instead of "couldn't be deleted".
 
 import '../assets/Inter-Regular.ttf';
 import { Fragment, jsx, jsxs } from 'react/jsx-runtime';
@@ -104,7 +105,7 @@ import { FileSystem, FocusScope, ScrollView, Text, View, useIsFocused } from '@p
       remove(file).then(() => {
         focusLater(next ? fileKey(next.path) : `files-kind:${kind}`);
         setNotice(t2("files.deleted", { name: file.game?.title ?? file.name }));
-      }, (error2) => setNotice(/ShadowMount/.test(error2.message) ? error2.message : t2("files.deleteFailed")));
+      }, (error2) => setNotice(error2.reason ? t2(error2.reason) : /ShadowMount/.test(error2.message) ? error2.message : t2("files.deleteFailed")));
       return true;
     };
     const back2 = () => {

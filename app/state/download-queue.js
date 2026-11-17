@@ -2,15 +2,23 @@
 // reconstructed from the esbuild bundle in eboot.bin
 // MODIFIED: an Archive.org refusal fails over or fails as a dead link instead of asking for the browser.
 // MODIFIED: an archive the catalog's password doesn't open is tried with the known release passwords.
+// MODIFIED: restart discards a completed archive the job downloaded itself after extraction failed, instead of refusing it as a final file.
+// MODIFIED: a folder publication records its destination before the rename, so a crash in between recovers.
+// MODIFIED: cancelling an install retry no longer leaves the job flagged as cancelling.
+// MODIFIED: a transfer that gets no byte within 90 seconds is cancelled with a connection error and falls over to the next source.
+// MODIFIED: a host that gives no answer is remembered; a blocked Vikingfile domain gives way to its mirror for the page, the capture and the browser.
+// MODIFIED: the browser capture serves every host the native matcher knows (Vikingfile, AkiraBox, DataNodes), link pages included.
+// MODIFIED: reading a source page (plus its countdown), a manifest or a captured link is held to 45 seconds, a stalled transfer stops waiting on the engine, and fail-over skips hosts that did not answer.
 
 import { INCOMPLETE_PART, STALE_PARTIAL, cause } from '../downloads/errors.js';
 import { t } from '../i18n/core.js';
 import { archivePassword } from './archive-password.js';
 import { BrowserRequired, archiveRefusal, cancellation, createSourceResolver, sourceKind, webURL } from './download-sources.js';
+import { markReachable, markUnreachable, noAnswer, reachableURL, unreachableSource } from './host-health.js';
 import { readJSON } from './read-json.js';
 import { mountedImages, shadowRequest, within2 } from './shadowmount.js';
 import { MARGIN2, spaceShortfall, stillNeeded } from './space.js';
-import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetadata, validateVikingCapture, vikingLinkPage } from './viking-capture.js';
+import { captureHost, capturePrefix, describeCapture, hostName, validateCapture } from './capture-hosts.js';
 
   var ACTIVE = ["resolving", "connecting", "downloading", "verifying", "extracting", "installing", "pausing"];
   var BUSY = ["queued", ...ACTIVE];
@@ -43,6 +51,7 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
     }).map((job2) => {
       delete job2.captureState;
       delete job2.captureError;
+      delete job2.captureHost;
       if (job2.state === "installing") return { ...job2, state: "installer-required" };
       if (job2.state === "extracting") job2.written = job2.total;
       if (job2.state === "removing") {
@@ -165,6 +174,7 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
       if (job2.written || job2.parts?.some((part) => part.written) || /space|storage|drive|disconnected/i.test(cause(error2.message))) return false;
       while (job2.fallbacks?.length) {
         const next = job2.fallbacks.shift();
+        if (unreachableSource(next.browserUrl || next.url || next.parts?.[0]?.sources?.[0]?.url)) continue;
         const artifact2 = artifactFor(next, job2.root);
         if (fs.exists(artifact2.destination) || fs.exists(`${artifact2.destination}.part`) || jobs.some((other) => other !== job2 && other.artifact.destination === artifact2.destination)) continue;
         job2.message = t("downloads.switchedSource", { failed: job2.release.provider, next: next.provider });
@@ -227,7 +237,92 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
       delete job2.install;
       change();
     }
+    // The release, with a blocked Vikingfile domain swapped for its mirror where the mirror answers.
+    function reachable(release) {
+      const url = release.browserUrl || release.url;
+      const swapped = url && reachableURL(url);
+      return !swapped || swapped === url ? release : { ...release, ...release.url === url && { url: swapped }, ...release.browserUrl === url && { browserUrl: swapped } };
+    }
     const canInstall = () => Boolean(packages) && platform === "ps5";
+    // A host that never answers (blocked on this network, or down) keeps the engine retrying its
+    // connections for many minutes with nothing to show but "connecting". After this long without a
+    // byte the transfer is cancelled with a connection error, which fails over to the next source.
+    const CONNECT_LIMIT_MS = 90e3;
+    // Reading a source page or probing a captured link: the engine retries a silent host up to eight
+    // times with backoff, which kept "connecting" on screen for minutes before any transfer began.
+    const RESOLVE_LIMIT_MS = 45e3;
+    // How long a cancelled native call gets to settle before the queue moves on without it.
+    const SETTLE_MS = 5e3;
+    function silent(url, ms) {
+      let host2 = "the host";
+      try {
+        host2 = webURL(url).host;
+      } catch {
+      }
+      return `Could not connect to ${host2} within ${ms / 1e3} seconds. Check the connection or choose another source.`;
+    }
+    // The error a stall guard cancelled a transfer with, so the failure reads as a silent host.
+    const stalls = /* @__PURE__ */ new WeakMap();
+    function stallGuard(job2, task, url) {
+      let late;
+      let fail;
+      const expired = new Promise((_, reject) => fail = reject);
+      expired.catch(() => {
+      });
+      const timer = setTimeout(() => {
+        if (!["resolving", "connecting"].includes(job2.state) || job2.received > 0) return;
+        const message = silent(url, CONNECT_LIMIT_MS);
+        stalls.set(job2, message);
+        job2.error = message;
+        console.log(`[download-queue] ${job2.id}: ${message}`);
+        task.cancel();
+        late = setTimeout(() => fail(new Error(message)), SETTLE_MS);
+      }, CONNECT_LIMIT_MS);
+      return { done: Promise.race([task.done, expired]), stop() {
+        clearTimeout(timer);
+        clearTimeout(late);
+      } };
+    }
+    // Work against a host that may never answer, held to RESOLVE_LIMIT_MS: past it the work's signal is
+    // aborted and the step fails as a silent host, whether or not the native request has settled. A page
+    // countdown the work reports through `wait` moves the deadline by its length.
+    async function bounded(url, signal, work) {
+      const limit = cancellation();
+      const relay = () => limit.cancel();
+      signal.addEventListener("abort", relay);
+      if (signal.aborted) limit.cancel();
+      let timer;
+      let late;
+      let deadline = Date.now() + RESOLVE_LIMIT_MS;
+      let fail;
+      const expired = new Promise((_, reject) => fail = reject);
+      expired.catch(() => {
+      });
+      function arm() {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          if (Date.now() < deadline) return arm();
+          console.log(`[download-queue] ${silent(url, RESOLVE_LIMIT_MS)}`);
+          limit.cancel();
+          late = setTimeout(() => fail(new Error(silent(url, RESOLVE_LIMIT_MS))), SETTLE_MS);
+        }, Math.max(deadline - Date.now(), 0));
+      }
+      arm();
+      const wait = (ms) => {
+        deadline += ms;
+        arm();
+      };
+      try {
+        return await Promise.race([work(limit.signal, wait), expired]);
+      } catch (error2) {
+        if (limit.signal.aborted && !signal.aborted) throw new Error(silent(url, RESOLVE_LIMIT_MS));
+        throw error2;
+      } finally {
+        clearTimeout(timer);
+        clearTimeout(late);
+        signal.removeEventListener("abort", relay);
+      }
+    }
     async function execute(job2) {
       let task;
       let unsubscribe;
@@ -254,12 +349,14 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
         if (job2.routing) finishRouting(job2);
         if (!job2.options) {
           if (job2.release.manifestUrl) {
-            const response = await http.request(job2.release.manifestUrl, { maxBytes: 4 * 1024 * 1024, signal });
+            const response = await bounded(job2.release.manifestUrl, signal, (limited) => http.request(job2.release.manifestUrl, { maxBytes: 4 * 1024 * 1024, signal: limited }));
             if (!response.ok) throw new Error(`Manifest HTTP ${response.status}. Choose another source or retry.`);
             job2.options = formats.manifest(await response.json());
           } else {
             if (!job2.release.url && !job2.release.browserUrl) throw new Error("This release has no download URL.");
-            const resolved = job2.directURL || sourceKind(job2.release) !== "direct" ? await sources.resolve(job2.release, { signal, directURL: job2.directURL }) : { url: webURL(job2.release.url).url };
+            const source2 = reachable(job2.release);
+            const resolved = job2.directURL || sourceKind(source2) !== "direct" ? await bounded(job2.directURL || source2.browserUrl || source2.url, signal, (limited, wait) => sources.resolve(source2, { signal: limited, directURL: job2.directURL, wait })) : { url: webURL(source2.url).url };
+            if (!job2.directURL) markReachable(source2.browserUrl || source2.url);
             job2.options = {
               ...resolved,
               rejectHtml: true,
@@ -284,7 +381,9 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
         active2.transferring = true;
         task = downloads.enqueue({ ...job2.options, rejectHtml: true, mirrors: void 0, connections: 64, adaptive: true, rangeBytes: 16 * 1024 * 1024, destination: job2.downloadDestination, storageRoot: job2.root, recoverCompleted: true });
         active2.task = task;
-        unsubscribe = task.subscribe((progress) => {
+        job2.received = 0;
+        const guard = stallGuard(job2, task, job2.options.url);
+        const off = task.subscribe((progress) => {
           if (job2.state === "pausing") return;
           if (ACTIVE.includes(progress.state)) job2.state = progress.state;
           job2.written = progress.written || 0;
@@ -305,7 +404,11 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
           }
           emit2();
         });
-        await task.done;
+        unsubscribe = () => {
+          off();
+          guard.stop();
+        };
+        await guard.done;
         if (job2.artifact.nextAction === "downloaded") route(job2);
         job2.state = job2.artifact.nextAction === "shadowmount" ? "downloaded" : job2.artifact.nextAction === "downloaded" ? "file-downloaded" : job2.artifact.nextAction;
         job2.written = job2.total || job2.written;
@@ -316,6 +419,14 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
         if (job2.state === "installer-required" && canInstall()) await install(job2);
       } catch (error2) {
         console.log("[download-queue] transfer stopped:", error2.message);
+        if (stalls.has(job2)) {
+          error2 = new Error(stalls.get(job2));
+          stalls.delete(job2);
+        }
+        if (noAnswer(cause(error2.message))) {
+          const attempted = job2.parts ? job2.currentSource : reachable(job2.release);
+          markUnreachable(job2.options?.url && active2.transferring ? job2.options.url : attempted.browserUrl || attempted.url);
+        }
         // The engine words every 401/403 as a possible browser check; from Archive.org it is a
         // restricted or removed item, so it fails over like a dead link and reads as one.
         const refused = archiveRefusal(job2.parts ? job2.currentSource : job2.release, cause(error2.message));
@@ -557,10 +668,16 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
         } else if (folder) {
           const destination = `${job2.root}/homebrew/${job2.release.filename.replace(/[^a-z0-9_.-]/gi, "_")}-app`;
           fs.mkdir(`${job2.root}/homebrew`, { recursive: true });
-          if (fs.exists(destination)) throw new Error("Extracted destination already exists; preserve it and inspect before retrying.");
-          storageIdentity(job2);
-          fs.rename(folder, destination);
-          if (folder !== job2.output) await fs.removeAsync(job2.output);
+          // The destination is recorded before the rename, so a crash in between leaves a job that knows
+          // the folder is its own: extracting again lands in it instead of refusing it as a stranger's.
+          if (folder !== destination) {
+            if (fs.exists(destination)) throw new Error("Extracted destination already exists; preserve it and inspect before retrying.");
+            storageIdentity(job2);
+            job2.publishTo = destination;
+            change();
+            fs.rename(folder, destination);
+            if (folder !== job2.output) await fs.removeAsync(job2.output);
+          }
           job2.output = destination;
           job2.publishTo = destination;
           job2.artifact.nextAction = "shadowmount";
@@ -649,10 +766,11 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
           job2.message = t("downloads.part", { part: index + 1, parts: job2.parts.length });
           active2.transferring = false;
           change();
-          const source2 = job2.release.parts[index].sources[part.sourceIndex || 0];
+          const source2 = reachable(job2.release.parts[index].sources[part.sourceIndex || 0]);
           job2.currentSource = source2;
           if (!part.options) {
-            const resolved = await sources.resolve(source2, { signal, directURL: job2.directURL });
+            const resolved = await bounded(job2.directURL || source2.browserUrl || source2.url, signal, (limited, wait) => sources.resolve(source2, { signal: limited, directURL: job2.directURL, wait }));
+            if (!job2.directURL) markReachable(source2.browserUrl || source2.url);
             part.options = { ...resolved, expectedBytes: source2.sizeBytes || void 0, sha256: source2.sha256 || void 0 };
             delete job2.directURL;
             change();
@@ -672,6 +790,8 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
             recoverCompleted: true
           });
           active2.task = task;
+          job2.received = 0;
+          const guard = stallGuard(job2, task, part.options.url);
           const off = task.subscribe((progress) => {
             if (job2.state === "pausing") return;
             if (ACTIVE.includes(progress.state)) job2.state = progress.state;
@@ -696,9 +816,10 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
           });
           let result;
           try {
-            result = await task.done;
+            result = await guard.done;
           } finally {
             off();
+            guard.stop();
           }
           part.written = result.written ?? part.total ?? part.written;
           job2.written = job2.parts.reduce((sum, item) => sum + item.written, 0);
@@ -761,6 +882,17 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
         if (info && !info.isFile) throw new Error(`Cannot discard a non-file: ${path}`);
       }
       return paths;
+    }
+    // The final file of a single-file job that downloaded it itself (so not adopted, and on its original
+    // drive), with its sidecars and a half-extracted output of its own: what an explicit restart discards.
+    // An unrelated final file is never the job's: enqueue and failOver refuse a destination that exists.
+    function completedFiles(job2) {
+      storageIdentity(job2);
+      const destination = job2.downloadDestination || job2.artifact.destination;
+      const info = fs.stat(destination);
+      if (info && !info.isFile) throw new Error(`Cannot discard a non-file: ${destination}`);
+      const extracted = job2.output?.startsWith(`${job2.root}/downloads/extracted/`) && !job2.publishTo && !jobs.some((other) => other !== job2 && [other.output, other.publishTo, other.artifact.destination, other.downloadDestination].some((owned2) => owned2 && (owned2 === job2.output || owned2.startsWith(`${job2.output}/`)))) ? [job2.output] : [];
+      return [destination, ...[".complete", ".complete.tmp", ".part", ".resume", ".resume.tmp"].map((suffix) => destination + suffix), ...extracted];
     }
     function setFiles(job2) {
       storageIdentity(job2);
@@ -1030,21 +1162,23 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
       const current = () => captures.get(job2.id) === session && jobs.includes(job2) && job2.state === "awaiting-browser";
       let handingOff = false;
       try {
-        const linkPage = vikingLinkPage(source2);
-        console.log(linkPage ? "[browser-capture] link page; any Vikingfile file" : "[browser-capture] reading public file metadata");
-        const metadata = linkPage ? linkPageMetadata(source2) : await describeVikingCapture(http, source2, session.cancel.signal);
+        const key = captureHost(source2);
+        job2.captureHost = hostName(key);
+        console.log(`[browser-capture] ${hostName(key)}: reading what the page says about the file`);
+        const metadata = await bounded(source2.browserUrl || source2.url, session.cancel.signal, (limited) => describeCapture(http, key, source2, limited));
+        markReachable(source2.browserUrl || source2.url);
         if (!current()) return;
-        session.task = browserCapture.capture({ prefix: VIKING_PREFIX, suffix: `/${metadata.filename}`, timeoutSeconds: 180 });
+        session.task = browserCapture.capture({ prefix: capturePrefix(key, source2), suffix: `/${metadata.filename}`, timeoutSeconds: 180 });
         job2.captureState = "capturing";
         change();
         console.log("[browser-capture] capture submitted; opening browser");
-        if (!linking?.openURL(webURL(job2.browserUrl).url)) throw new Error("The browser could not open. Retry or enter the final file link.");
+        if (!linking?.openURL(webURL(reachableURL(job2.browserUrl)).url)) throw new Error("The browser could not open. Retry or enter the final file link.");
         const result = await session.task.done;
         if (!current()) return;
         job2.captureState = "validating";
         change();
         console.log("[browser-capture] link captured; validating one-byte range");
-        const validated = await validateVikingCapture(http, result.url, linkPage ? capturedVikingFile(result.url, metadata) : metadata, session.cancel.signal);
+        const validated = await bounded(result.url, session.cancel.signal, (limited) => validateCapture(http, key, result.url, metadata, limited));
         if (!current()) return;
         source2.sizeBytes = validated.expectedBytes;
         if (!job2.parts) job2.total = validated.expectedBytes;
@@ -1061,6 +1195,7 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
       } catch (error2) {
         if (!current() && !(handingOff && jobs.includes(job2) && job2.state === "queued" && active2?.job !== job2)) return;
         console.log("[browser-capture] failed:", error2.message);
+        if (noAnswer(error2.message)) markUnreachable(source2.browserUrl || source2.url);
         session.cancel.cancel();
         session.task?.cancel();
         captures.delete(job2.id);
@@ -1158,9 +1293,14 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
         const job2 = find(id);
         if (!["paused", "failed", "awaiting-browser"].includes(job2.state) || active2?.job === job2) return;
         if (job2.adopted) throw new Error(ADOPTED);
-        const paths = !job2.parts?.[job2.partIndex]?.completed && (job2.options || job2.rootIdentity || job2.written || fs.exists(job2.artifact.destination + ".part") || fs.exists(job2.artifact.destination + ".resume")) ? partialFiles(job2) : [];
+        const completed = !job2.parts && job2.rootIdentity && job2.written > 0 && fs.exists(job2.downloadDestination || job2.artifact.destination);
+        const paths = completed ? completedFiles(job2) : !job2.parts?.[job2.partIndex]?.completed && (job2.options || job2.rootIdentity || job2.written || fs.exists(job2.artifact.destination + ".part") || fs.exists(job2.artifact.destination + ".resume")) ? partialFiles(job2) : [];
         stopCapture(job2);
         if (paths.length) await removing(job2, () => removeAll(paths));
+        if (completed) {
+          if (!job2.publishTo) delete job2.output;
+          delete job2.packages;
+        }
         delete job2.directURL;
         delete job2.reresolved;
         if (job2.parts?.[job2.partIndex] && !job2.parts[job2.partIndex].completed) {
@@ -1211,8 +1351,8 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
       openBrowser(id) {
         const job2 = find(id);
         if (job2.state !== "awaiting-browser") return;
-        const source2 = job2.parts ? job2.currentSource : job2.release;
-        if (browserCapture && (sourceKind(source2) === "vikingfile" || vikingLinkPage(source2))) {
+        const source2 = reachable(job2.parts ? job2.currentSource : job2.release);
+        if (browserCapture && captureHost(source2)) {
           if (captures.has(id)) return;
           if (captures.size || active2) throw new Error("Wait for the current queue task before opening Vikingfile, so its captured link can start immediately.");
           const session = { cancel: cancellation(), task: null };
@@ -1223,7 +1363,7 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
           void captureBrowser(job2, source2, session);
           return;
         }
-        if (!linking?.openURL(webURL(job2.browserUrl).url)) throw new Error("The browser could not open. Open this source on another device.");
+        if (!linking?.openURL(webURL(reachableURL(job2.browserUrl)).url)) throw new Error("The browser could not open. Open this source on another device.");
         job2.message = t("downloads.afterVerification");
         change();
       },
@@ -1256,7 +1396,9 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
         const job2 = find(id);
         if (COMPLETE.includes(job2.state) || job2.state === "removing") return;
         if (active2?.job === job2) {
-          job2.cancelling = true;
+          // An install retry owns no partial file: cancelling it only asks the console to stop, and the
+          // package stays, since the console may finish anyway. Nothing is forgotten.
+          if (!job2.install) job2.cancelling = true;
           this.pause(id);
           return;
         }

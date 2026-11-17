@@ -1,5 +1,6 @@
 // ../pub-game-store/native/browse/Spotlight.jsx
 // reconstructed from the esbuild bundle in eboot.bin
+// MODIFIED: the spotlight features only games with a source.
 
 import '../assets/Inter-Regular.ttf';
 import { jsx, jsxs } from 'react/jsx-runtime';
@@ -9,7 +10,7 @@ import { SpotlightList } from './SpotlightList.jsx';
 import { useSlides } from './useSlides.js';
 import { games } from '../data/catalog.js';
 import { LATIN_IN_RTL, focusEnd, useLocale, useT } from '../i18n/index.js';
-import { fromArchive, genreLabel, sortGames, summaryOf } from '../state/catalog.js';
+import { downloadable, fromArchive, genreLabel, sortGames, summaryOf } from '../state/catalog.js';
 import { useNavActions, useNavState } from '../state/nav.jsx';
 import { useStoreActions, useWishlist } from '../state/store.jsx';
 import { Button2 } from '../ui/Button.jsx';
@@ -27,8 +28,9 @@ import { AnimatePresence, Image, Text, View, motion } from '@ps5-react/core';
     return list;
   };
   function selectFeatured() {
-    const eligible = games.filter((game) => game.art.logo && fromArchive(game));
-    const pool = eligible.length >= 5 ? eligible : games.filter((game) => game.art.logo);
+    const offered = games.filter((game) => game.art.logo && downloadable(game));
+    const eligible = offered.filter(fromArchive);
+    const pool = eligible.length >= 5 ? eligible : offered;
     const byFame = [...pool].sort((a, b) => b.recommendations - a.recommendations);
     const latest2 = new Set(sortGames(games, "newest").slice(0, NEWEST));
     const recent2 = shuffle(byFame.filter((game) => latest2.has(game)).slice(0, 10)).slice(0, 2);

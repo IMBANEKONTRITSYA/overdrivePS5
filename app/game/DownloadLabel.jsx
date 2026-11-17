@@ -1,5 +1,6 @@
 // ../pub-game-store/native/game/DownloadLabel.jsx
 // reconstructed from the esbuild bundle in eboot.bin
+// MODIFIED: the unavailable status says when every source is gone, not that the entry has no URL.
 
 import '../assets/Inter-Regular.ttf';
 import { jsx, jsxs } from 'react/jsx-runtime';
@@ -41,8 +42,8 @@ import { Text, View } from '@ps5-react/core';
     removing: { icon: "delete", text: "download.button.removing" }
   };
   var INK = { dark: { color: "#0d0d0f" }, light: { color: "#f2f2f3" }, disabled: { color: "#a3a3ab" } };
-  function statusLine(status, progress, sizeGb) {
-    if (status === "unavailable") return [t("download.status.unavailable"), null];
+  function statusLine(status, progress, sizeGb, gone) {
+    if (status === "unavailable") return [t(gone ? "download.status.sourcesGone" : "download.status.unavailable"), null];
     if (status === "awaiting-browser") return [t("download.status.awaitingLink"), null];
     if (status === "finishing") return [stateLabel(status), t("downloads.writingToDisk")];
     if (status === "no-space") return [t("download.status.noSpace"), sizeGb && t("download.status.needs", { size: formatSize(sizeGb) })];

@@ -4,8 +4,12 @@
 #pragma once
 #include <stdbool.h>
 #include <stddef.h>
-typedef struct { const char *filename; char url[544]; } BrowserMatch;
-extern const char *const browser_capture_prefixes[2];
+// Overdrive: `prefix` binds a capture to the host the app asked for; the route buffer fits DataNodes' long links.
+typedef struct { const char *filename; const char *prefix; char url[1024]; } BrowserMatch;
+extern const char *const browser_capture_prefixes[];
+extern const size_t browser_capture_prefix_count;
 const char *browser_capture_prefix(const char *url);
+bool browser_capture_known_prefix(const char *prefix);
+bool browser_capture_same_host(const char *a, const char *b);
 bool browser_capture_url(const char *filename, const char *url);
 bool browser_match(void *context, const unsigned char *bytes, size_t length);

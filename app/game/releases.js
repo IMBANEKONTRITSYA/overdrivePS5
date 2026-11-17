@@ -1,5 +1,6 @@
 // ../pub-game-store/native/game/releases.js
 // reconstructed from the esbuild bundle in eboot.bin
+// MODIFIED: a release marked unavailable does not count as downloadable.
 
 import { t } from '../i18n/core.js';
 import { driveName } from '../state/downloads.js';
@@ -17,7 +18,7 @@ import { DownloadFormats } from '@ps5-react/core';
     }
     return stillNeeded({ release, artifact: artifact2, total: release.sizeBytes, written: 0 });
   }
-  var canDownload = (game) => game.hasDownloads ?? (game.releases || []).some((release) => release.url || release.manifestUrl || release.browserUrl);
+  var canDownload = (game) => game.hasDownloads ?? (game.releases || []).some((release) => !release.unavailableReason && (release.url || release.manifestUrl || release.browserUrl));
   function spaceAdvice(roots, free, storage, need) {
     const other = roots.findIndex((root2, i) => i !== storage && free[i] >= need + MARGIN2);
     if (other >= 0) return t("download.space.otherDrive", { drive: driveName(roots[other]), size: formatBytes(free[other]) });

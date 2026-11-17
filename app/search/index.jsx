@@ -1,5 +1,6 @@
 // ../pub-game-store/native/search/index.jsx
 // reconstructed from the esbuild bundle in eboot.bin
+// MODIFIED: a query with results is remembered when the search is left, not only when submitted or opened from.
 
 import '../assets/Inter-Regular.ttf';
 import { Fragment, jsx, jsxs } from 'react/jsx-runtime';
@@ -97,6 +98,8 @@ import { FocusScope, ScrollView, Text, View, VirtualList, motion } from '@ps5-re
       }
     }));
     const back2 = () => {
+      // A search left by going back is worth remembering too, not only one submitted or opened from.
+      if (searchGames(current.current).length) rememberSearch(current.current);
       setQuery("");
       onBack();
       return true;

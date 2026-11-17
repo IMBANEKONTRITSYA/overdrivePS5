@@ -1,5 +1,6 @@
 // ../pub-game-store/native/state/read-json.js
 // reconstructed from the esbuild bundle in eboot.bin
+// MODIFIED: hosts.json, the hosts that did not answer on this network, is a record.
 
 
   function readJSON(fs, path, fallback, valid = () => true, log2 = console.log) {
@@ -32,7 +33,8 @@
     "settings.json": isRecord,
     "wishlist.json": isStringList,
     "recent.json": isStringList,
-    "searches.json": isStringList
+    "searches.json": isStringList,
+    "hosts.json": isRecord
   };
 
 export { SAVED_FILES, isRecord, isStringList, readJSON };

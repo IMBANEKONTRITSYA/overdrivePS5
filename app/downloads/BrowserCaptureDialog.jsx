@@ -1,5 +1,6 @@
 // ../pub-game-store/native/downloads/BrowserCaptureDialog.jsx
 // reconstructed from the esbuild bundle in eboot.bin
+// MODIFIED: the title names the host being captured from.
 
 import '../assets/Inter-Regular.ttf';
 import { jsx, jsxs } from 'react/jsx-runtime';
@@ -28,7 +29,7 @@ import { FocusScope, Text, View } from '@ps5-react/core';
       close();
       return true;
     }, children: /* @__PURE__ */ (0, jsx)(View, { style: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, zIndex: 50, alignItems: "center", justifyContent: "center", backgroundColor: "#000000f2" }, children: /* @__PURE__ */ (0, jsxs)(View, { style: { width: 1380, gap: 30, borderRadius: 18, borderWidth: 2, borderColor: "#2a2a2f", backgroundColor: "#17171a", padding: 48 }, children: [
-      /* @__PURE__ */ (0, jsx)(Text, { style: { fontFamily: "Inter-Regular", fontSize: 36, color: "#f2f2f3", lineHeight: 48 }, children: t2("capture.title") }),
+      /* @__PURE__ */ (0, jsx)(Text, { style: { fontFamily: "Inter-Regular", fontSize: 36, color: "#f2f2f3", lineHeight: 48 }, children: t2("capture.title", { host: job2.captureHost || "Vikingfile" }) }),
       /* @__PURE__ */ (0, jsx)(Text, { style: { width: 1260, fontFamily: "Inter-Regular", fontSize: 24, color: "#a3a3ab", numberOfLines: 2, ellipsizeMode: "tail", lineHeight: 36 }, children: job2.title }),
       /* @__PURE__ */ (0, jsx)(ShimmerText, { textStyle: INSTRUCTION, background: colors.surface, children: t2(`capture.${job2.captureState}`) }),
       /* @__PURE__ */ (0, jsx)(Text, { style: { width: 1260, fontFamily: "Inter-Regular", fontSize: 24, color: "#a3a3ab", numberOfLines: 3, ellipsizeMode: "tail", lineHeight: 36 }, children: t2("capture.detail") }),
