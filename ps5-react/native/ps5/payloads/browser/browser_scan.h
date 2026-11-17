@@ -10,7 +10,7 @@
 /* Bounded read-only scanner. Matchers must return only the selected file. */
 #define PROBE_CHUNK 65536U
 #define PROBE_MARKER_MAX 256U
-#define PROBE_MATCH_MAX 544U /* Percent-encoded filename and route, including NUL. */
+#define PROBE_MATCH_MAX 1024U /* Percent-encoded filename and route, including NUL. */
 typedef struct {
     void *context;
     int (*read)(void *, uint64_t, void *, size_t);

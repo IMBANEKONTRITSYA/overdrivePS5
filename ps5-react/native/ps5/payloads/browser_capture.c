@@ -53,7 +53,7 @@ int main(void) {
   char magic[8], prefix[64], suffix[162], seconds[8];
   signal(SIGPIPE, SIG_IGN);
   if (!line(magic, sizeof magic) || strcmp(magic, "BRC1") || !line(prefix, sizeof prefix) ||
-      strcmp(prefix, "https://vikingfile.com/d/") || !line(suffix, sizeof suffix) ||
+      !browser_capture_known_prefix(prefix) || !line(suffix, sizeof suffix) ||
       suffix[0] != '/' || !line(seconds, sizeof seconds)) return fail("Invalid capture request.");
   const char *filename = suffix + 1;
   if (strchr(filename, '/') || strchr(filename, '\\') || strstr(filename, "..")) return fail("Invalid filename.");
@@ -68,7 +68,7 @@ int main(void) {
     usleep(100000);
   }
   if (found != 1) return fail("The browser could not be identified safely. Reopen the page and retry.");
-  BrowserMatch match = {.filename = filename};
+  BrowserMatch match = {.filename = filename, .prefix = prefix};
   ProbeReader reader = {.context = &target, .read = probe_target_read, .active = active,
     .match = browser_match, .match_context = &match, .remaining = 128U * 1024U * 1024U};
   ProbeResult result = PROBE_ABSENT;

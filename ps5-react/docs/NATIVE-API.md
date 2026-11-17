@@ -616,9 +616,14 @@ finally { off(); }
 
 PS5-only, one capture at a time. Sends bundled `browser-capture.elf` to the
 localhost ELF loader on port 9021. The desktop returns a failed task explaining
-that a PS5 is required. The only permitted prefix is the exact Vikingfile HTTPS
-download host; suffix is `/` plus a filename of at most 160 UTF-8 bytes without
-controls, slashes, backslashes or `..`. The deadline is an integer from 1 to
+that a PS5 is required. The permitted prefixes are the download hosts whose
+final-link shape the payload knows (`payloads/browser/browser_url.c`): Vikingfile
+(`https://vikingfile.com/d/`, `https://vik1ngfile.site/d/`), AkiraBox
+(`https://akirabox.com/download/`, `https://akirabox.to/download/`) and
+DataNodes' download proxy (`https://tunnel`, for `tunnel<n>.dlproxy.uk/download/…?sig=…`,
+which names no file and so takes the suffix `/` alone); a capture returns only
+routes of the prefix it asked for. The suffix is `/` plus a filename of at most
+160 UTF-8 bytes without controls, slashes, backslashes or `..`. The deadline is an integer from 1 to
 180 seconds. Snapshots have `id`, `state`, `error` and a matching `url` on
 completion. `cancel()` shuts down the connection, stops the payload's next
 read, and rejects `done` with `AbortError`. Host exit stops and joins the worker.

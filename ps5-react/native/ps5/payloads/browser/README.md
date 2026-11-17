@@ -11,4 +11,9 @@ Only the uniquely identified SceNKNetworkProcess/SceNKNetworkProc is read.
 Identity is rechecked before reads; no executable/file-backed pages, writes,
 cookies, dumps or arbitrary process selectors. Each session has a 128 MiB total
 read budget, 64 KiB reads separated by 32 ms, and a maximum 180-second deadline.
-Only a complete matching Vikingfile URL is returned. Buffers are wiped.
+Only a complete URL matching the requested host's route shape is returned. Buffers are wiped.
+
+Overdrive extends the route table in `browser_url.c` beyond Vikingfile: AkiraBox
+(`/download/<token>/<filename>`) and DataNodes' download proxy
+(`tunnel<n>.dlproxy.uk/download/<token>?sig=<token>`), each capture bound to the
+prefix the app asked for; the route buffer grew to 1024 bytes for the latter.
