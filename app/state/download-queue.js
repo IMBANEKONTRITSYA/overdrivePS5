@@ -8,7 +8,7 @@
 // MODIFIED: a transfer that gets no byte within 90 seconds is cancelled with a connection error and falls over to the next source.
 // MODIFIED: a host that gives no answer is remembered; a blocked Vikingfile domain gives way to its mirror for the page, the capture and the browser.
 // MODIFIED: the browser capture serves every host the native matcher knows (Vikingfile, AkiraBox, DataNodes), link pages included.
-// MODIFIED: reading a source page, a manifest or a captured link is held to 45 seconds, a stalled transfer stops waiting on the engine, and fail-over skips hosts that did not answer.
+// MODIFIED: reading a source page (plus its countdown), a manifest or a captured link is held to 45 seconds, a stalled transfer stops waiting on the engine, and fail-over skips hosts that did not answer.
 
 import { INCOMPLETE_PART, STALE_PARTIAL, cause } from '../downloads/errors.js';
 import { t } from '../i18n/core.js';
@@ -284,7 +284,8 @@ import { captureHost, capturePrefix, describeCapture, hostName, validateCapture 
       } };
     }
     // Work against a host that may never answer, held to RESOLVE_LIMIT_MS: past it the work's signal is
-    // aborted and the step fails as a silent host, whether or not the native request has settled.
+    // aborted and the step fails as a silent host, whether or not the native request has settled. A page
+    // countdown the work reports through `wait` moves the deadline by its length.
     async function bounded(url, signal, work) {
       const limit = cancellation();
       const relay = () => limit.cancel();
@@ -292,17 +293,27 @@ import { captureHost, capturePrefix, describeCapture, hostName, validateCapture 
       if (signal.aborted) limit.cancel();
       let timer;
       let late;
-      const expired = new Promise((_, reject) => {
-        timer = setTimeout(() => {
-          console.log(`[download-queue] ${silent(url, RESOLVE_LIMIT_MS)}`);
-          limit.cancel();
-          late = setTimeout(() => reject(new Error(silent(url, RESOLVE_LIMIT_MS))), SETTLE_MS);
-        }, RESOLVE_LIMIT_MS);
-      });
+      let deadline = Date.now() + RESOLVE_LIMIT_MS;
+      let fail;
+      const expired = new Promise((_, reject) => fail = reject);
       expired.catch(() => {
       });
+      function arm() {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          if (Date.now() < deadline) return arm();
+          console.log(`[download-queue] ${silent(url, RESOLVE_LIMIT_MS)}`);
+          limit.cancel();
+          late = setTimeout(() => fail(new Error(silent(url, RESOLVE_LIMIT_MS))), SETTLE_MS);
+        }, Math.max(deadline - Date.now(), 0));
+      }
+      arm();
+      const wait = (ms) => {
+        deadline += ms;
+        arm();
+      };
       try {
-        return await Promise.race([work(limit.signal), expired]);
+        return await Promise.race([work(limit.signal, wait), expired]);
       } catch (error2) {
         if (limit.signal.aborted && !signal.aborted) throw new Error(silent(url, RESOLVE_LIMIT_MS));
         throw error2;
@@ -344,7 +355,7 @@ import { captureHost, capturePrefix, describeCapture, hostName, validateCapture 
           } else {
             if (!job2.release.url && !job2.release.browserUrl) throw new Error("This release has no download URL.");
             const source2 = reachable(job2.release);
-            const resolved = job2.directURL || sourceKind(source2) !== "direct" ? await bounded(job2.directURL || source2.browserUrl || source2.url, signal, (limited) => sources.resolve(source2, { signal: limited, directURL: job2.directURL })) : { url: webURL(source2.url).url };
+            const resolved = job2.directURL || sourceKind(source2) !== "direct" ? await bounded(job2.directURL || source2.browserUrl || source2.url, signal, (limited, wait) => sources.resolve(source2, { signal: limited, directURL: job2.directURL, wait })) : { url: webURL(source2.url).url };
             if (!job2.directURL) markReachable(source2.browserUrl || source2.url);
             job2.options = {
               ...resolved,
@@ -758,7 +769,7 @@ import { captureHost, capturePrefix, describeCapture, hostName, validateCapture 
           const source2 = reachable(job2.release.parts[index].sources[part.sourceIndex || 0]);
           job2.currentSource = source2;
           if (!part.options) {
-            const resolved = await bounded(job2.directURL || source2.browserUrl || source2.url, signal, (limited) => sources.resolve(source2, { signal: limited, directURL: job2.directURL }));
+            const resolved = await bounded(job2.directURL || source2.browserUrl || source2.url, signal, (limited, wait) => sources.resolve(source2, { signal: limited, directURL: job2.directURL, wait }));
             if (!job2.directURL) markReachable(source2.browserUrl || source2.url);
             part.options = { ...resolved, expectedBytes: source2.sizeBytes || void 0, sha256: source2.sha256 || void 0 };
             delete job2.directURL;
