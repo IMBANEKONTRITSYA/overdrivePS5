@@ -13,7 +13,7 @@
   "capture.capturing": "सत्यापन पूरा करें और Download चुनें",
   "capture.detail": "Download चुनने के बाद यहाँ लौटें। फ़ाइल सत्यापित होते ही डाउनलोड अपने आप शुरू हो जाता है। कैप्चर अधिकतम 3 मिनट चलता है।",
   "capture.preparing": "फ़ाइल सत्यापन तैयार हो रहा है…",
-  "capture.title": "Vikingfile सत्यापन",
+  "capture.title": "{host} सत्यापन",
   "capture.validating": "कैप्चर की गई फ़ाइल जाँची जा रही है…",
   "catalog.empty.browseAll": "पूरी लाइब्रेरी ब्राउज़ करें",
   "catalog.empty.filtersHint": "ऊपर एक फिल्टर हटाएँ, या उन्हें बदलने के लिए फिल्टर खोलें।",

@@ -13,7 +13,7 @@
   "capture.capturing": "تصدیق مکمل کریں اور Download منتخب کریں",
   "capture.detail": "Download منتخب کرنے کے بعد یہاں واپس آئیں۔ فائل کی تصدیق ہوتے ہی ڈاؤن لوڈ خود شروع ہو جاتا ہے۔ کیپچر زیادہ سے زیادہ 3 منٹ چلتا ہے۔",
   "capture.preparing": "فائل کی تصدیق تیار ہو رہی ہے…",
-  "capture.title": "Vikingfile کی تصدیق",
+  "capture.title": "{host} کی تصدیق",
   "capture.validating": "حاصل کردہ فائل کی جانچ ہو رہی ہے…",
   "catalog.empty.browseAll": "مکمل لائبریری براؤز کریں",
   "catalog.empty.filtersHint": "اوپر سے کوئی فلٹر ہٹائیں، یا فلٹرز کھولیں انہیں تبدیل کرنے کے لیے۔",

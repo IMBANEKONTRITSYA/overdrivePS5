@@ -421,7 +421,7 @@
   "versions.sources": "{count, plural, one {# fonte} many {# milhões de fontes} other {# fontes}}",
   "versions.thisPage": "Esta página",
   "versions.title": "Escolher versão",
-  "capture.title": "Verificação do Vikingfile",
+  "capture.title": "Verificação do {host}",
   "capture.preparing": "Preparando a verificação do arquivo…",
   "capture.capturing": "Passe a verificação e aperte Download",
   "capture.validating": "Conferindo o arquivo capturado…",

@@ -421,7 +421,7 @@
     "versions.sources": "{count, plural, one {# source} other {# sources}}",
     "versions.thisPage": "This page",
     "versions.title": "Choose version",
-    "capture.title": "Vikingfile verification",
+    "capture.title": "{host} verification",
     "capture.preparing": "Preparing the file verification\u2026",
     "capture.capturing": "Complete verification and select Download",
     "capture.validating": "Checking the captured file\u2026",

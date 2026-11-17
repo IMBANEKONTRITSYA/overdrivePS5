@@ -13,7 +13,7 @@
   "capture.capturing": "Selesaikan verifikasi lalu pilih Download",
   "capture.detail": "Kembali ke sini setelah memilih Download. Unduhan dimulai otomatis begitu berkas terverifikasi. Penangkapan berlangsung hingga 3 menit.",
   "capture.preparing": "Menyiapkan verifikasi berkas…",
-  "capture.title": "Verifikasi Vikingfile",
+  "capture.title": "Verifikasi {host}",
   "capture.validating": "Memeriksa berkas yang ditangkap…",
   "catalog.empty.browseAll": "Jelajahi seluruh perpustakaan",
   "catalog.empty.filtersHint": "Hapus filter di atas, atau buka Filter untuk mengubahnya.",

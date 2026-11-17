@@ -13,7 +13,7 @@
   "capture.capturing": "যাচাই শেষ করে Download বেছে নিন",
   "capture.detail": "Download বেছে নেওয়ার পর এখানে ফিরে আসুন। ফাইল যাচাই হলেই ডাউনলোড নিজে থেকে শুরু হবে। ক্যাপচার সর্বোচ্চ ৩ মিনিট চলে।",
   "capture.preparing": "ফাইল যাচাই প্রস্তুত হচ্ছে…",
-  "capture.title": "Vikingfile যাচাই",
+  "capture.title": "{host} যাচাই",
   "capture.validating": "ধরা ফাইলটি পরীক্ষা হচ্ছে…",
   "catalog.empty.browseAll": "সম্পূর্ণ লাইব্রেরি ব্রাউজ করুন",
   "catalog.empty.filtersHint": "উপরে একটি ফিল্টার সরান, অথবা সেগুলি পরিবর্তন করতে ফিল্টার খুলুন।",

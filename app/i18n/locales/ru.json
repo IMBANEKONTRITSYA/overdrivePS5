@@ -13,7 +13,7 @@
   "capture.capturing": "Пройдите проверку и нажмите Download",
   "capture.detail": "Вернитесь сюда после нажатия Download. Загрузка начнётся сама, как только файл будет проверен. Захват длится до 3 минут.",
   "capture.preparing": "Подготовка проверки файла…",
-  "capture.title": "Проверка Vikingfile",
+  "capture.title": "Проверка {host}",
   "capture.validating": "Проверка захваченного файла…",
   "catalog.empty.browseAll": "Просмотреть всю библиотеку",
   "catalog.empty.filtersHint": "Удалите фильтр выше или откройте Фильтры, чтобы их изменить.",

@@ -36,8 +36,8 @@ import { formatBytes } from '../state/size.js';
       return "browser";
     }
     if (kind === "direct" || kind === "manifest") return "direct";
-    if (kind === "vikingfile") return "capture";
-    return kind === "browser" || kind === "datanodes" || kind === "akirabox" || kind === "unavailable" ? "browser" : "page";
+    if (kind === "vikingfile" || kind === "datanodes" || kind === "akirabox") return "capture";
+    return kind === "browser" || kind === "unavailable" ? "browser" : "page";
   }
   var SPEED = { "archive.org": "sources.speed.archive", mediafire: "sources.speed.mediafire", "overdrive cdn": "sources.cdnFastest" };
   var isOverdriveCdn = (provider) => /^overdrive\s*cdn$/i.test(provider ?? "");

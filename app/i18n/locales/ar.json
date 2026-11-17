@@ -13,7 +13,7 @@
   "capture.capturing": "أكمل التحقق ثم اختر Download",
   "capture.detail": "عد إلى هنا بعد اختيار Download. يبدأ التنزيل تلقائيًا عند التحقق من الملف. يستمر الالتقاط حتى 3 دقائق.",
   "capture.preparing": "جارٍ تجهيز التحقق من الملف…",
-  "capture.title": "التحقق من Vikingfile",
+  "capture.title": "التحقق من {host}",
   "capture.validating": "جارٍ فحص الملف الملتقط…",
   "catalog.empty.browseAll": "تصفح المكتبة الكاملة",
   "catalog.empty.filtersHint": "أزل أحد المرشحات أعلاه، أو افتح المرشحات لتغييرها.",

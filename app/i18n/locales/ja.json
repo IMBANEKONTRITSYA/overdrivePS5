@@ -13,7 +13,7 @@
   "capture.capturing": "認証を済ませてDownloadを選んでください",
   "capture.detail": "Downloadを選んだらここに戻ってください。ファイルの確認が済むとダウンロードが自動で始まります。取得は最長3分です。",
   "capture.preparing": "ファイルの認証を準備中…",
-  "capture.title": "Vikingfileの認証",
+  "capture.title": "{host}の認証",
   "capture.validating": "取得したファイルを確認中…",
   "catalog.empty.browseAll": "ライブラリをすべて見る",
   "catalog.empty.filtersHint": "上のフィルターを外すか、フィルターを開いて変更してください。",

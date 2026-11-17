@@ -1,6 +1,7 @@
 // ../pub-game-store/native/state/download-sources.js
 // reconstructed from the esbuild bundle in eboot.bin
 // MODIFIED: archiveRefusal, so an Archive.org 401/403 is a dead link, not a browser check.
+// MODIFIED: an AkiraBox page is not scraped; its link comes from the browser capture.
 
 
   function webURL(value) {
@@ -88,7 +89,7 @@
       if (kind === "unavailable") throw new Error("Source unavailable: no download URL.");
       if (kind === "direct") return { url: webURL(url).url, rejectHtml: true };
       if (kind === "manifest") throw new Error("Split manifests must be resolved by the queue.");
-      if (kind === "browser" || kind === "datanodes") throw new BrowserRequired(url);
+      if (kind === "browser" || kind === "datanodes" || kind === "akirabox") throw new BrowserRequired(url);
       const response = await request(url, { signal });
       const base = response.url || url;
       if (response.headers?.["content-disposition"]?.includes("attachment")) return direct(base, signal);

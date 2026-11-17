@@ -13,7 +13,7 @@
   "capture.capturing": "Schließe die Prüfung ab und wähle Download",
   "capture.detail": "Komm nach dem Tippen auf Download hierher zurück. Der Download startet von selbst, sobald die Datei geprüft ist. Die Erfassung dauert bis zu 3 Minuten.",
   "capture.preparing": "Dateiprüfung wird vorbereitet…",
-  "capture.title": "Vikingfile-Prüfung",
+  "capture.title": "{host}-Prüfung",
   "capture.validating": "Erfasste Datei wird geprüft…",
   "catalog.empty.browseAll": "Ganze Bibliothek",
   "catalog.empty.filtersHint": "Löschen Sie einen Filter oder öffnen Sie Filter, um sie zu ändern.",

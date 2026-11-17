@@ -13,7 +13,7 @@
   "capture.capturing": "Termine la vérification et choisis Download",
   "capture.detail": "Reviens ici après avoir choisi Download. Le téléchargement démarre tout seul une fois le fichier vérifié. La capture dure jusqu'à 3 minutes.",
   "capture.preparing": "Préparation de la vérification du fichier…",
-  "capture.title": "Vérification Vikingfile",
+  "capture.title": "Vérification {host}",
   "capture.validating": "Contrôle du fichier capturé…",
   "catalog.empty.browseAll": "Parcourir la bibliothèque",
   "catalog.empty.filtersHint": "Supprimez un filtre, ou ouvrez Filtres pour les modifier.",

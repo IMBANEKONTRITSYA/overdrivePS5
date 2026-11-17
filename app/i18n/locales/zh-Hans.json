@@ -13,7 +13,7 @@
   "capture.capturing": "完成验证后选择 Download",
   "capture.detail": "选择 Download 后回到这里。文件验证通过后下载会自动开始。捕获最长持续 3 分钟。",
   "capture.preparing": "正在准备文件验证…",
-  "capture.title": "Vikingfile 验证",
+  "capture.title": "{host} 验证",
   "capture.validating": "正在检查捕获的文件…",
   "catalog.empty.browseAll": "浏览完整游戏库",
   "catalog.empty.filtersHint": "移除上方的筛选条件，或打开“筛选”进行更改。",
